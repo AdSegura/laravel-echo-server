@@ -5,6 +5,7 @@ import {HttpApi} from './api';
 import {Log} from './log';
 import * as fs from 'fs';
 import {Bunyan} from "./log/bunyan";
+import {IoUtils} from "./utils/ioUtils";
 
 const packageFile = require('../package.json');
 const {constants} = require('crypto');
@@ -56,7 +57,8 @@ export class EchoServer {
             port: "514",
             facility: "local0",
             type: "sys"
-        }
+        },
+        multiple_sockets: true
     };
 
     /**
@@ -202,26 +204,54 @@ export class EchoServer {
         let comando = command.execute;
 
         switch (comando) {
-            case 'close_socket':
+            case 'close_socket': {
 
-                Log.success('Close Socket ID: ' +  command.data)
-                let socket = this.find(command.data);
-                if(! socket) return;
+                Log.success('Close Socket ID: ' + command.data);
 
-                Log.success('We have a Rogue Socket to Kill')
+                let user = IoUtils.findUser(command.data, this.server.io);
 
-                Object.keys(socket.rooms).forEach(room => {
+                if (user.sockets.length === 0) return;
+
+                Log.success('We have a Rogue Sockets to Kill');
+
+                /*Object.keys(socket.rooms).forEach(room => {
                     if (room !== socket.id) {
                         Log.success('Close Socket user ID ' + room);
                         this.channel.leave(socket, room, 'Laravel Order');
                     }
+                });*/
+
+                user.sockets.forEach(socketId => {
+                    this.disconnect(
+                        this.server.io.sockets.sockets[socketId],
+                        'Laravel Close Socket Command');
                 });
 
-                this.disconnect(socket, 'Laravel Close Socket Command');
+                break;
+            }
+            case 'exit_channel': {
+                Log.success(`kick off user_id:${command.data.user_id} from Channel:${command.data.channel}`);
+                this.log.info(`kick off user_id:${command.data.user_id} from Channel:${command.data.channel}`);
 
-                break
+                let user = IoUtils.findUser(command.data.user_id, this.server.io);
+
+                //this.channel.leave(socket, room, 'Laravel Order');
+
+                break;
+            }
         }
+    }
 
+    /**
+     * Disconnect a Socket
+     *
+     * @param socket
+     * @param reason
+     */
+    disconnect(socket: any, reason: string){
+        Log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
+        this.log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
+        socket.disconnect(true)
     }
 
     /**
@@ -263,12 +293,14 @@ export class EchoServer {
         this.server.io.on('connection', socket => {
             this.channel.joinRoot(socket)
                 .then(auth => {
-                    if(auth !== true)
-                        return this.disconnect(socket, 'Laravel Auth is not returning TRUE');
+                    if(auth === false)
+                        return this.disconnect(socket, 'Laravel Auth Failed for user id:' + auth.channel_data.user_id);
 
-                        Log.success(`AUTH Success ON NSP / Channel AKA Root Channel SocketID: ${socket.id}`);
-                        this.log.info(`Socket:${socket.id} Auth Success`);
-                        return this.startSubscribers(socket);
+                    socket.user_id = auth.channel_data.user_id;
+
+                    Log.success(`User Id:${socket.user_id} AUTH Success ON NSP / Channel AKA Root Channel SocketID: ${socket.id}`);
+                    this.log.info(`User Id:${socket.user_id} with Socket:${socket.id} Auth Success`);
+                    return this.startSubscribers(socket);
 
                 })
                 .catch(e => {
@@ -280,18 +312,6 @@ export class EchoServer {
                     this.disconnect(socket, e.reason)
                 })
         });
-    }
-
-    /**
-     * Disconnect a Socket
-     *
-     * @param socket
-     * @param reason
-     */
-    disconnect(socket: any, reason: string){
-        Log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
-        this.log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
-        socket.disconnect(true)
     }
 
     /**

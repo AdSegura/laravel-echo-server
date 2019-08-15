@@ -5,9 +5,10 @@
 * Auth user on connect event (closing socket if fails to)
 * JWT Cookie Auth
 * JWT query ?token= Auth 
-* only allow one socket per user
+* one or multiple sockets allowed
 * syslog | file logging
 * close user's sockets from Laravel
+* kickOff user's from channels
 
 ### new Options Added
 ```json
@@ -20,7 +21,8 @@
         "port": "514",
         "facility": "local0",
         "type": "sys"
-    }
+    },
+    "multiple_sockets": false
 }
 ```
 
@@ -33,15 +35,19 @@ Broadcast::channel('root', AuthSocket::class);
 public function join(User $user)
     {
         if((int) $user->id !== (int) Auth::user()->id)
-            return false;
-
-        $socket_id = request()->header('x-socket-id');
-
-        if(! $socket_id) return false;
-
-        $user->set_socket($socket_id); //if you only allow one socket per user
-
-        return true;
+                   return false;
+       
+               $socket_id = request()->header('x-socket-id');
+       
+               if(! $socket_id) return false;
+       
+               $multiple_sockets = request()->input('multiple_sockets');
+       
+               if($multiple_sockets == false) {
+                   $user->disconnect();
+               }
+       
+               return $user->id;
     }
 ```
 ### If only allow one socket per user
@@ -78,6 +84,26 @@ class EchoServerCommand implements ShouldBroadcast
     }
 }
 ```
+
+#### User.php
+
+```php
+ public function disconnect()
+    {
+        event(new EchoServerCommand([
+            "execute" => "close_socket",
+            "data" => $this->id
+        ]));
+
+        return $this;
+    }
+```
+
+#### Http Api KickOff
+```sh
+http POST ":4000/apps/:appID/channels/leave/:channelName/user/:user_id?auth_key=:auth_key"
+```
+
 
 # Official Laravel Echo Server Doc 1.5.7
 

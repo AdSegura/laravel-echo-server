@@ -52,7 +52,7 @@ export class BaseAuthChannel {
 
         let options = {
             url: this.authHost(socket) + this.options.authEndpoint,
-            form: { channel_name: this.rootChannel },
+            form: { channel_name: this.rootChannel, multiple_sockets: this.options.multiple_sockets },
             headers: {},
             rejectUnauthorized: false
         };

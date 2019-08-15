@@ -1,6 +1,7 @@
 import { Log } from './../log';
 let url = require('url');
 import * as _ from 'lodash';
+import {IoUtils} from "../utils/ioUtils";
 
 export class HttpApi {
     /**
@@ -44,6 +45,23 @@ export class HttpApi {
             '/apps/:appId/channels/:channelName/users',
             (req, res) => this.getChannelUsers(req, res)
         );
+
+        this.express.get(
+            '/apps/:appId/channels/:channel_name/user/:user_id',
+            (req, res) => this.getUserSocketsInChannel(req, res)
+        );
+
+        this.express.post(
+            '/apps/:appId/channels/leave/:channel_name/user/:user_id',
+            (req, res) => this.kickOffUserFromChannel(req, res)
+        );
+
+        this.express.get(
+            '/apps/:appId/user/:user_id',
+            (req, res) => this.findUser(req, res)
+        );
+
+
     }
 
     /**
@@ -58,6 +76,20 @@ export class HttpApi {
                 next();
             });
         }
+    }
+
+    /**
+     * Find user by id
+     *
+     * @param req
+     * @param res
+     */
+    findUser(req: any, res: any): void {
+        const user_id = req.params.user_id;
+
+        const user_data = IoUtils.findUser(user_id, this.io);
+
+        res.json({ user: user_data });
     }
 
     /**
@@ -124,9 +156,13 @@ export class HttpApi {
         let room = this.io.sockets.adapter.rooms[channelName];
         let subscriptionCount = room ? room.length : 0;
 
+
+        let sockets = IoUtils.getUsersInChannel(channelName, this.io);
+
         let result = {
             subscription_count: subscriptionCount,
-            occupied: !!subscriptionCount
+            occupied: !!subscriptionCount,
+            sockets
         };
 
         if (this.channel.isPresence(channelName)) {
@@ -167,6 +203,40 @@ export class HttpApi {
 
             res.json({ users: users });
         }, error => Log.error(error));
+    }
+
+    /**
+     * Get Sockets in channel based on user_id
+     *
+     * @param req
+     * @param res
+     */
+    getUserSocketsInChannel(req: any, res: any): void {
+        const {user_id, channel_name} = req.params;
+
+        const sockets = IoUtils.getUserSocketsInChannel(user_id, channel_name, this.io);
+
+        return res.json(sockets);
+    }
+
+    /**
+     * kickOff User From Channel
+     *
+     * @param req
+     * @param res
+     */
+    kickOffUserFromChannel(req: any, res: any): void {
+        const {user_id, channel_name} = req.params;
+
+        const sockets = IoUtils.getUserSocketsInChannel(user_id, channel_name, this.io);
+
+        sockets.forEach(socketInfo => {
+            let socket = IoUtils.findSocketById(socketInfo.socket_id, this.io);
+            if(socket)
+                this.channel.leave(socket, channel_name, 'kickOff Channel')
+        });
+
+        return res.json({sockets_killed: sockets});
     }
 
     /**

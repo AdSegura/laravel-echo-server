@@ -121,24 +121,13 @@ export class Channel {
     joinPrivate(socket: any, data: any): void {
         this.private.authenticate(socket, data).then(res => {
 
-            Log.success('Auth User From Laravel: ' + res)
-
             socket.join(data.channel);
 
             if (this.isPresence(data.channel)) {
 
-                Log.success('Join Private Is Presence Channel: ' + data.channel)
-
+                Log.success('Join Private Is Presence Channel: ' + data.channel);
 
                 let member = res.channel_data;
-
-                Log.success(member)
-
-                /*try {
-                    member = JSON.parse(res.channel_data);
-                } catch (e) {
-                    Log.error('Join Private Is Presence Channel Error : ' + e)
-                }*/
 
                 this.presence.join(socket, data.channel, member);
             }

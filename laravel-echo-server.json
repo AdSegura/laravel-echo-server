@@ -45,5 +45,6 @@
         "port": "514",
         "facility": "local0",
         "type": "sys"
-    }
+    },
+    "multiple_sockets": true
 }

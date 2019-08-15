@@ -27,7 +27,7 @@ export class SQLiteDatabase implements DatabaseDriver {
     }
 
     /**
-     * Retrieve data from redis.
+     * Retrieve data from sqlite.
      */
     get(key: string): Promise<any> {
         return new Promise<any>((resolve, reject) => {
