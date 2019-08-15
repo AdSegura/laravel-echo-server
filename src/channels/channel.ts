@@ -1,6 +1,6 @@
-import { PresenceChannel } from './presence-channel';
-import { PrivateChannel } from './private-channel';
-import { Log } from './../log';
+import {PresenceChannel} from './presence-channel';
+import {PrivateChannel} from './private-channel';
+import {Log} from './../log';
 import {RootChannel} from "./rootChannel";
 
 export class Channel {
@@ -38,10 +38,8 @@ export class Channel {
         this.rootChannel = new RootChannel(options, this.log);
         this.presence = new PresenceChannel(io, options, this.log);
 
+        Log.success('Channels are ready.');
 
-        if (this.options.devMode) {
-            Log.success('Channels are ready.');
-        }
     }
 
     /**
@@ -84,9 +82,9 @@ export class Channel {
 
             socket.leave(channel);
 
-            if (this.options.devMode) {
-                Log.info(`[${new Date().toLocaleTimeString()}] - ${socket.id} left channel: ${channel} (${reason})`);
-            }
+
+            Log.info(`[${new Date().toLocaleTimeString()}] - ${socket.id} left channel: ${channel} (${reason})`);
+
         }
     }
 
@@ -134,10 +132,10 @@ export class Channel {
 
             this.onJoin(socket, data.channel);
 
-            }, error => {
-                Log.error(error.reason);
-                this.io.sockets.to(socket.id)
-                    .emit('subscription_error', data.channel, error.status);
+        }, error => {
+            Log.error(error.reason);
+            this.io.sockets.to(socket.id)
+                .emit('subscription_error', data.channel, error.status);
         });
     }
 
@@ -152,9 +150,9 @@ export class Channel {
      * On join a channel log success.
      */
     onJoin(socket: any, channel: string): void {
-        if (this.options.devMode) {
-            Log.info(`[${new Date().toLocaleTimeString()}] - ${socket.id} joined channel: ${channel}`);
-        }
+
+        Log.info(`[${new Date().toLocaleTimeString()}] - ${socket.id} joined channel: ${channel}`);
+
     }
 
     /**

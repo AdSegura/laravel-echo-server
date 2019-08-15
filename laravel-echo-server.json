@@ -38,7 +38,7 @@
         "allowHeaders": "Origin, Content-Type, X-Auth-Token, X-Requested-With, Accept, Authorization, X-CSRF-TOKEN, X-Socket-Id"
     },
 	"command_channel": "private-echo.server.commands",
-	"log": "file",
+	"log": "syslog",
     "log_folder": "../../logs/",
     "syslog": {
         "host": "127.0.0.1",

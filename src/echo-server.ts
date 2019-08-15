@@ -130,9 +130,9 @@ export class EchoServer {
 
             this.subscribers = [];
             if (this.options.subscribers.http)
-                this.subscribers.push(new HttpSubscriber(this.server.express, this.options));
+                this.subscribers.push(new HttpSubscriber(this.server.express, this.options, this.log));
             if (this.options.subscribers.redis)
-                this.subscribers.push(new RedisSubscriber(this.options));
+                this.subscribers.push(new RedisSubscriber(this.options, this.log));
 
             this.httpApi = new HttpApi(io, this.channel, this.server.express, this.options.apiOriginAllow, this.log);
             this.httpApi.init();
@@ -149,11 +149,10 @@ export class EchoServer {
         Log.title(`\nL A R A V E L  E C H O  S E R V E R\n`);
         Log.info(`version ${packageFile.version}\n`);
 
-        if (this.options.devMode) {
-            Log.warning('Starting server in DEV mode...\n');
-        } else {
-            Log.info('Starting server...\n')
-        }
+        Log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`, true);
+
+        this.log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`)
+        this.log.error('PROBANDOOOOOOOOOOOOOOO')
     }
 
     /**
@@ -214,13 +213,6 @@ export class EchoServer {
 
                 Log.success('We have a Rogue Sockets to Kill');
 
-                /*Object.keys(socket.rooms).forEach(room => {
-                    if (room !== socket.id) {
-                        Log.success('Close Socket user ID ' + room);
-                        this.channel.leave(socket, room, 'Laravel Order');
-                    }
-                });*/
-
                 user.sockets.forEach(socketId => {
                     this.disconnect(
                         this.server.io.sockets.sockets[socketId],
@@ -235,7 +227,7 @@ export class EchoServer {
 
                 let user = IoUtils.findUser(command.data.user_id, this.server.io);
 
-                //this.channel.leave(socket, room, 'Laravel Order');
+                //TODO this.channel.leave(socket, room, 'Laravel Order');
 
                 break;
             }
@@ -250,7 +242,7 @@ export class EchoServer {
      */
     disconnect(socket: any, reason: string){
         Log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
-        this.log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
+        this.log.info(`Disconnect socket:${socket.id}, reason:${reason}`);
         socket.disconnect(true)
     }
 
@@ -299,13 +291,12 @@ export class EchoServer {
                     socket.user_id = auth.channel_data.user_id;
 
                     Log.success(`User Id:${socket.user_id} AUTH Success ON NSP / Channel AKA Root Channel SocketID: ${socket.id}`);
-                    this.log.info(`User Id:${socket.user_id} with Socket:${socket.id} Auth Success`);
+                    this.log.info(`User Id:${socket.user_id} with Socket:${socket.id} Auth Success ON NSP / Root Channel`);
                     return this.startSubscribers(socket);
 
                 })
                 .catch(e => {
                     Log.error(`Socket:${socket.id} join Root Auth Error, reason:${e.reason}`);
-
                     this.log
                         .error(`Socket:${socket.id} join Root Auth Error, reason:${e.reason}`);
 

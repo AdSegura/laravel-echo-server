@@ -13,6 +13,7 @@
 ### new Options Added
 ```json
 {
+    "app_name": "myApp",
     "command_channel": "private-echo.server.commands",
     "log": "file",
     "log_folder": "../../logs/",
@@ -102,6 +103,41 @@ class EchoServerCommand implements ShouldBroadcast
 #### Http Api KickOff
 ```sh
 http POST ":4000/apps/:appID/channels/leave/:channelName/user/:user_id?auth_key=:auth_key"
+```
+### Rsyslog Server Conf example
+
+Make rsyslog listen localhost:514:udp
+ 
+###### rsyslogd.conf 
+```sh
+#################
+#### MODULES ####
+#################
+
+module(load="imuxsock") # provides support for local system logging
+#module(load="immark")  # provides --MARK-- message capability
+
+# provides UDP syslog reception
+module(load="imudp")
+input(type="imudp" port="514" Address="127.0.0.1")
+```
+
+Route laravel-echo-server logs to myapp.log file
+
+###### rsyslog.d/01-myapp.conf
+```sh
+template(name="bunyan" type="string"
+         string="%msg:R,ERE,1,FIELD:(\\{.*\\})--end%\n")
+
+:programname, isequal, "laravel-echo-server" {
+  *.* /var/log/myapp.log;bunyan
+  stop
+}
+``` 
+
+###### Now you can use bunyan to parse logs 
+```sh
+node_modules/bunyan/bin/bunyan /var/log/myapp.log
 ```
 
 

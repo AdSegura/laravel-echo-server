@@ -66,10 +66,7 @@ export class PresenceChannel {
      */
     join(socket: any, channel: string, member: any) {
         if (!member) {
-            if (this.options.devMode) {
                 Log.error('Unable to join channel. Member data for presence channel missing');
-            }
-
             return;
         }
 

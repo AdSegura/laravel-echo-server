@@ -7,8 +7,10 @@ export class HttpSubscriber implements Subscriber {
      * Create new instance of http subscriber.
      *
      * @param  {any} express
+     * @param options
+     * @param log
      */
-    constructor(private express, private options) { }
+    constructor(private express, private options, protected log: any) { }
 
     /**
      * Subscribe to events to broadcast.
@@ -21,9 +23,8 @@ export class HttpSubscriber implements Subscriber {
             this.express.post('/apps/:appId/events', (req, res) => {
                 let body: any = [];
                 res.on('error', (error) => {
-                    if (this.options.devMode) {
-                        Log.error(error);
-                    }
+                    Log.error(error);
+                    this.log.error('Http Subscriber events ' + error);
                 });
 
                 req.on('data', (chunk) => body.push(chunk))
@@ -59,15 +60,15 @@ export class HttpSubscriber implements Subscriber {
                 event: body.name,
                 data: data,
                 socket: body.socket_id
-            }
+            };
+
             var channels = body.channels || [body.channel];
 
-            if (this.options.devMode) {
-                Log.info("Channel: " + channels.join(', '));
-                Log.info("Event: " + message.event);
-            }
+            Log.info("Channel: " + channels.join(', '));
+            Log.info("Event: " + message.event);
 
             channels.forEach(channel => broadcast(channel, message));
+
         } else {
             return this.badResponse(
                 req,
@@ -89,6 +90,7 @@ export class HttpSubscriber implements Subscriber {
      */
     badResponse(req: any, res: any, message: string): boolean {
         res.statusCode = 400;
+        this.log.error('http bad response:' + message)
         res.json({ error: message });
 
         return false;

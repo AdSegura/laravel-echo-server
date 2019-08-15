@@ -1,4 +1,5 @@
 import {Log} from "../log";
+
 let url = require('url');
 const request = require('request');
 const cookie = require('cookie');
@@ -33,11 +34,11 @@ export class BaseAuthChannel {
 
         const options = this.prepareRequestOptions(socket, data);
 
-        if (this.options.devMode) {
-            Log.info(`[${new Date().toLocaleTimeString()}] - Sending auth request to: ${options.url}\n`);
-        }
+        Log.info(`[${new Date().toLocaleTimeString()}] - Sending auth request to: ${options.url}
+          channel_request:${options.form.channel_name}\n
+        `);
 
-        this.log.info(`[${new Date().toLocaleTimeString()}] - Sending auth request to: ${options.url}\n`);
+        this.log.info(`Sending auth request to: ${options.url} channel_request:${options.form.channel_name}`);
 
         return this.serverRequest(socket, options);
     }
@@ -48,16 +49,16 @@ export class BaseAuthChannel {
      * @param socket
      * @param data
      */
-    prepareRequestOptions(socket: any, data: any = null){
+    prepareRequestOptions(socket: any, data: any = null) {
 
         let options = {
             url: this.authHost(socket) + this.options.authEndpoint,
-            form: { channel_name: this.rootChannel, multiple_sockets: this.options.multiple_sockets },
+            form: {channel_name: this.rootChannel, multiple_sockets: this.options.multiple_sockets},
             headers: {},
             rejectUnauthorized: false
         };
 
-        if(data && data.channel)
+        if (data && data.channel)
             options.form.channel_name = data.channel;
 
         return options;
@@ -76,23 +77,26 @@ export class BaseAuthChannel {
             this.request.post(options, (error, response, body, next) => {
 
                 if (error) {
-                    if (this.options.devMode) {
-                        Log.error(`[${new Date().toLocaleTimeString()}] - Error authenticating ${socket.id} for ${options.form.channel_name}`);
-                        Log.error(error);
-                    }
 
-                    reject({ reason: 'Error sending authentication request.', status: 0 });
+                    Log.error(`[${new Date().toLocaleTimeString()}] - Error authenticating ${socket.id} for ${options.form.channel_name}`);
+                    this.log.error(`Error authenticating ${socket.id} for ${options.form.channel_name}`);
+
+                    reject({reason: 'Error sending authentication request.', status: 0});
+
                 } else if (response.statusCode !== 200) {
-                    if (this.options.devMode) {
-                        Log.warning(`[${new Date().toLocaleTimeString()}] - ${socket.id} could not be authenticated to ${options.form.channel_name}`);
-                        Log.error(response.body);
-                    }
 
-                    reject({ reason: 'Client can not be authenticated, got HTTP status ' + response.statusCode, status: response.statusCode });
+                    Log.warning(`[${new Date().toLocaleTimeString()}] - ${socket.id} could not be authenticated to ${options.form.channel_name}`);
+                    this.log.error(`${socket.id} could not be authenticated to ${options.form.channel_name}`);
+                    Log.error(response.body);
+
+                    reject({
+                        reason: 'Client can not be authenticated, got HTTP status ' + response.statusCode,
+                        status: response.statusCode
+                    });
+
                 } else {
-                    if (this.options.devMode) {
-                        Log.info(`[${new Date().toLocaleTimeString()}] - ${socket.id} authenticated for: ${options.form.channel_name}`);
-                    }
+                    Log.info(`[${new Date().toLocaleTimeString()}] - ${socket.id} authenticated for: ${options.form.channel_name}`);
+                    this.log.info(`${socket.id} authenticated for: ${options.form.channel_name}`);
 
                     try {
                         body = JSON.parse(response.body);
@@ -129,12 +133,10 @@ export class BaseAuthChannel {
                     authHostSelected = `${referer.protocol}//${referer.host}`;
                     break;
                 }
-            };
+            }
         }
 
-        if (this.options.devMode) {
-            Log.error(`[${new Date().toLocaleTimeString()}] - Preparing authentication request to: ${authHostSelected}`);
-        }
+        Log.success(`[${new Date().toLocaleTimeString()}] - Preparing authentication request to: ${authHostSelected}`);
 
         return authHostSelected;
     }
@@ -159,9 +161,9 @@ export class BaseAuthChannel {
         headers['X-Socket-Id'] = socket.id;
 
 
-        if(socket.request.headers['Authorization']){
+        if (socket.request.headers['Authorization']) {
             headers['Authorization'] = socket.request.headers['Authorization']
-        }else if(socket.request._query.token){
+        } else if (socket.request._query.token) {
             headers['Authorization'] = ' Bearer ' + socket.request._query.token;
         } else {
             const cookies = cookie.parse(socket.request.headers.cookie);
@@ -170,6 +172,4 @@ export class BaseAuthChannel {
 
         return headers;
     }
-
-
 }

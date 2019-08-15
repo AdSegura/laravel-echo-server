@@ -236,6 +236,8 @@ export class HttpApi {
                 this.channel.leave(socket, channel_name, 'kickOff Channel')
         });
 
+        this.log.info(`kickOff User ${user_id} From Channel ${channel_name}`);
+
         return res.json({sockets_killed: sockets});
     }
 
