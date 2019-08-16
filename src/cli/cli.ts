@@ -1,3 +1,5 @@
+import {Log} from "../log";
+
 const fs = require('fs');
 const path = require('path');
 const colors = require("colors");
@@ -6,6 +8,8 @@ const inquirer = require('inquirer');
 const crypto = require('crypto');
 
 import ErrnoException = NodeJS.ErrnoException;
+import {MockLaravel} from "../test";
+import {FsUtils} from "../utils/fsUtils";
 
 /**
  * Laravel Echo Server CLI
@@ -29,6 +33,7 @@ export class Cli {
     envVariables: any = {
         'LARAVEL_ECHO_SERVER_AUTH_HOST': 'authHost',
         'LARAVEL_ECHO_SERVER_DEBUG': 'devMode',
+        'LARAVEL_ECHO_SERVER_TEST': 'testMode',
         'LARAVEL_ECHO_SERVER_HOST': 'host',
         'LARAVEL_ECHO_SERVER_PORT': 'port',
         'LARAVEL_ECHO_SERVER_REDIS_HOST': 'databaseConfig.redis.host',
@@ -312,7 +317,20 @@ export class Cli {
                 process.on('SIGHUP', process.exit);
                 process.on('SIGTERM', process.exit);
 
-                echo.run(options);
+                if(process.env['LARAVEL_ECHO_SERVER_TEST']){
+                    options.authHost =  `http://localhost:${options.dev.mock.laravel_port}`;
+                    options.devMode  =  true;
+                    options.log  =  "file";
+
+                    Log.info('Running TEST MODE');
+
+                    let mock = new MockLaravel(options);
+                    mock.run();
+                    echo.run(options);
+                } else {
+
+                    echo.run(options);
+                }
             });
         });
     }

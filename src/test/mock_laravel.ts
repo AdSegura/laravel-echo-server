@@ -29,6 +29,8 @@ export class MockLaravel {
     /** available users*/
     private users: any;
 
+    protected server: any;
+
     /**
      * Create new instance of http subscriber.
      *
@@ -36,11 +38,25 @@ export class MockLaravel {
     constructor(private options: any) {
         this.channels = channels;
         this.users = users;
+
         this.express = express();
         this.express.use(bodyParser.urlencoded({extended: true}));
         this.express.use(bodyParser.json());
-        const httpServer = http.createServer(this.express);
-        httpServer.listen(this.options.dev.mock.laravel_port);
+
+    }
+
+    /**
+     * Initialize Server.
+     */
+    run(): Promise<any> {
+        return new Promise((resolve, reject) => {
+
+            this.server = http.createServer(this.express);
+            this.server.listen(this.options.dev.mock.laravel_port);
+            this.init();
+
+            return resolve();
+        })
     }
 
     /**
@@ -52,9 +68,16 @@ export class MockLaravel {
             (req, res) => this.getRoot(req, res),
         );
         this.express.post(
-            '/auth/broadcasting',
+            '/broadcasting/auth',
             (req, res) => this.broadcasting(req, res),
         );
+    }
+
+    /**
+     * Initialize the API.
+     */
+    stop(): void {
+       this.server.close();
     }
 
     /**
