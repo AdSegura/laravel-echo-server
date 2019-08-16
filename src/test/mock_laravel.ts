@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const bodyParser = require('body-parser');
 
+
 const channels = [
     "root",
     "presence",
@@ -32,14 +33,14 @@ export class MockLaravel {
      * Create new instance of http subscriber.
      *
      */
-    constructor() {
+    constructor(private options: any) {
         this.channels = channels;
         this.users = users;
         this.express = express();
         this.express.use(bodyParser.urlencoded({extended: true}));
         this.express.use(bodyParser.json());
         const httpServer = http.createServer(this.express);
-        httpServer.listen('7718');
+        httpServer.listen(this.options.dev.mock.laravel_port);
     }
 
     /**

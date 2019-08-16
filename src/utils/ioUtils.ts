@@ -1,5 +1,13 @@
+import {Log} from "../log";
+
 export class IoUtils {
 
+    /**
+     * Find User
+     *
+     * @param id
+     * @param io
+     */
     static findUser(id: number, io: any): any {
 
         let ids = Object.keys(io.sockets.sockets);
@@ -68,5 +76,18 @@ export class IoUtils {
         });
 
         return user_sockets;
+    }
+
+    /**
+     * Disconnect a Socket
+     *
+     * @param socket
+     * @param reason
+     * @param logger
+     */
+    static disconnect(socket: any, logger: any, reason: string){
+        Log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
+        logger.info(`Disconnect socket:${socket.id}, reason:${reason}`);
+        socket.disconnect(true)
     }
 }

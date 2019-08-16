@@ -183,6 +183,10 @@ export class Cli {
                 when: function(options) {
                     return options.corsAllow == true;
                 }
+            },{
+                name: 'multiple_sockets',
+                default: true,
+                message: 'Allow Multiple Sockets per User?',
             }, {
                 name: 'log',
                 message: 'Which Log type would you like to use?',

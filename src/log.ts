@@ -1,22 +1,8 @@
+import {FsUtils} from "./utils/fsUtils";
 var colors = require('colors');
-const fs = require('fs');
-const path = require('path');
 
-let options = {
-    devMode: false
-};
+const options = FsUtils.getConfigfile();
 
-const config_file = path.resolve(__dirname, '../laravel-echo-server.json');
-
-fs.access(config_file, fs.F_OK, error => {
-    if (error) {
-        console.error(colors.error('Error: The config file cound not be found.'));
-
-        return false;
-    }
-
-    options = require(config_file);
-});
 
 colors.setTheme({
     silly: 'rainbow',

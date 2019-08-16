@@ -1,29 +1,24 @@
-{
-	"app_name": "myApp",
-    "authHost": "http://localhost:8000",
+const {constants} = require('crypto');
+
+export const options = {
+    "app_name": "myApp",
+    "authHost": "http://localhost",
     "authEndpoint": "/broadcasting/auth",
-    "clients": [
-        {
-            "appId": "7c7779cb46dc0b03",
-            "key": "61ec53be69c3841f451c0d3d7df81edb"
-        }
-    ],
-    "database": "sqlite",
+    "clients": [],
+    "database": "redis",
     "databaseConfig": {
-        "redis": {
-            "port": "6379",
-            "host": "redis.local"
-        },
+        "redis": {},
         "sqlite": {
             "databasePath": "/dist/database/laravel-echo-server.sqlite"
         }
     },
-    "devMode": true,
+    "devMode": false,
     "testMode": false,
     "host": null,
-    "port": "4000",
+    "port": 6001,
     "protocol": "http",
     "socketio": {},
+    "secureOptions": constants.SSL_OP_NO_TLSv1,
     "sslCertPath": "",
     "sslKeyPath": "",
     "sslCertChainPath": "",
@@ -33,14 +28,14 @@
         "redis": true
     },
     "apiOriginAllow": {
-        "allowCors": true,
-        "allowOrigin": "http://localhost:9528",
-        "allowMethods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "allowHeaders": "Origin, Content-Type, X-Auth-Token, X-Requested-With, Accept, Authorization, X-CSRF-TOKEN, X-Socket-Id"
+        "allowCors": false,
+        "allowOrigin": "",
+        "allowMethods": "",
+        "allowHeaders": ""
     },
     "multiple_sockets": true,
-	"command_channel": "private-echo.server.commands",
-	"log": "syslog",
+    "command_channel": "private-echo.server.commands",
+    "log": "file",
     "log_folder": "../../logs/",
     "syslog": {
         "host": "127.0.0.1",
@@ -53,4 +48,4 @@
             "laravel_port": 7718
         }
     }
-}
+};

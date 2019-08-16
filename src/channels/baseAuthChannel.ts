@@ -34,9 +34,7 @@ export class BaseAuthChannel {
 
         const options = this.prepareRequestOptions(socket, data);
 
-        Log.info(`[${new Date().toLocaleTimeString()}] - Sending auth request to: ${options.url}
-          channel_request:${options.form.channel_name}\n
-        `);
+        Log.info(`[${new Date().toLocaleTimeString()}] - Sending auth request to: ${options.url} channel:${options.form.channel_name}\n`);
 
         this.log.info(`Sending auth request to: ${options.url} channel_request:${options.form.channel_name}`);
 
@@ -104,9 +102,6 @@ export class BaseAuthChannel {
                         body = response.body
                     }
 
-                    console.log('.......................................')
-                    console.log(JSON.stringify(body))
-                    console.log('.......................................')
                     resolve(body);
                 }
             });

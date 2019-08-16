@@ -3,12 +3,13 @@ import {Channel} from './channels';
 import {Server} from './server';
 import {HttpApi} from './api';
 import {Log} from './log';
-import * as fs from 'fs';
 import {Bunyan} from "./log/bunyan";
 import {IoUtils} from "./utils/ioUtils";
-
 const packageFile = require('../package.json');
-const {constants} = require('crypto');
+import {FsUtils} from "./utils/fsUtils";
+import {CommandChannel} from "./channels/commandChannel";
+
+const defaultOptions = FsUtils.getConfigfile();
 
 /**
  * Echo server class.
@@ -17,49 +18,7 @@ export class EchoServer {
     /**
      * Default server options.
      */
-    public defaultOptions: any = {
-        app_name: "myApp",
-        authHost: 'http://localhost',
-        authEndpoint: '/broadcasting/auth',
-        clients: [],
-        database: 'redis',
-        databaseConfig: {
-            redis: {},
-            sqlite: {
-                databasePath: '/dist/database/laravel-echo-server.sqlite'
-            }
-        },
-        devMode: false,
-        host: null,
-        port: 6001,
-        protocol: "http",
-        socketio: {},
-        secureOptions: constants.SSL_OP_NO_TLSv1,
-        sslCertPath: '',
-        sslKeyPath: '',
-        sslCertChainPath: '',
-        sslPassphrase: '',
-        subscribers: {
-            http: true,
-            redis: true
-        },
-        apiOriginAllow: {
-            allowCors: false,
-            allowOrigin: '',
-            allowMethods: '',
-            allowHeaders: ''
-        },
-        command_channel: "private-echo.server.commands",
-        log: "file", //syslog|file
-        log_folder: "../../logs/",
-        syslog: {
-            host: "127.0.0.1",
-            port: "514",
-            facility: "local0",
-            type: "sys"
-        },
-        multiple_sockets: true
-    };
+    public defaultOptions: any;
 
     /**
      * Configurable server options.
@@ -75,6 +34,9 @@ export class EchoServer {
      * Channel instance.
      */
     private channel: Channel;
+
+    /** command channel */
+    private commandChannel: CommandChannel;
 
     /**
      * Subscribers
@@ -95,7 +57,7 @@ export class EchoServer {
      * Create a new instance.
      */
     constructor() {
-
+        this.defaultOptions = defaultOptions;
     }
 
     /**
@@ -127,6 +89,7 @@ export class EchoServer {
     init(io: any): Promise<any> {
         return new Promise((resolve, reject) => {
             this.channel = new Channel(io, this.options, this.log);
+            this.commandChannel = new CommandChannel(this.options, io, this.log);
 
             this.subscribers = [];
             if (this.options.subscribers.http)
@@ -152,7 +115,6 @@ export class EchoServer {
         Log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`, true);
 
         this.log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`)
-        this.log.error('PROBANDOOOOOOOOOOOOOOO')
     }
 
     /**
@@ -184,55 +146,21 @@ export class EchoServer {
      * @param message
      */
     routeIncomingEvents(channel: string, message: any): any {
-        Log.success('Route Incoming Event from Redis')
+
         if(channel === this.options.command_channel){
-            Log.success('ECHO SERVER GETS A COMMAND FROM LARAVEL')
-            this.log.info('Comand to Execute: ' + JSON.stringify(message.data.command))
-            this.execute(message.data.command)
+
+            Log.success('ECHO SERVER GETS A COMMAND FROM LARAVEL');
+            this.log.info('Comand to Execute: ' + JSON.stringify(message.data.command));
+
+            this.commandChannel.execute(message.data.command)
+
         } else {
+
             return this.broadcast(channel, message);
+
         }
     }
 
-    /**
-     * Execute Laravel commands
-     *
-     * @param command
-     */
-    execute(command: any): any {
-        let comando = command.execute;
-
-        switch (comando) {
-            case 'close_socket': {
-
-                Log.success('Close Socket ID: ' + command.data);
-
-                let user = IoUtils.findUser(command.data, this.server.io);
-
-                if (user.sockets.length === 0) return;
-
-                Log.success('We have a Rogue Sockets to Kill');
-
-                user.sockets.forEach(socketId => {
-                    this.disconnect(
-                        this.server.io.sockets.sockets[socketId],
-                        'Laravel Close Socket Command');
-                });
-
-                break;
-            }
-            case 'exit_channel': {
-                Log.success(`kick off user_id:${command.data.user_id} from Channel:${command.data.channel}`);
-                this.log.info(`kick off user_id:${command.data.user_id} from Channel:${command.data.channel}`);
-
-                let user = IoUtils.findUser(command.data.user_id, this.server.io);
-
-                //TODO this.channel.leave(socket, room, 'Laravel Order');
-
-                break;
-            }
-        }
-    }
 
     /**
      * Disconnect a Socket
@@ -240,11 +168,11 @@ export class EchoServer {
      * @param socket
      * @param reason
      */
-    disconnect(socket: any, reason: string){
+   /* disconnect(socket: any, reason: string){
         Log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
         this.log.info(`Disconnect socket:${socket.id}, reason:${reason}`);
         socket.disconnect(true)
-    }
+    }*/
 
     /**
      * Broadcast events to channels from subscribers.
@@ -286,7 +214,11 @@ export class EchoServer {
             this.channel.joinRoot(socket)
                 .then(auth => {
                     if(auth === false)
-                        return this.disconnect(socket, 'Laravel Auth Failed for user id:' + auth.channel_data.user_id);
+                        return IoUtils.disconnect(
+                            socket,
+                            this.log,
+                            'Laravel Auth Failed for user id:' + auth.channel_data.user_id,
+                        );
 
                     socket.user_id = auth.channel_data.user_id;
 
@@ -300,7 +232,7 @@ export class EchoServer {
                     this.log
                         .error(`Socket:${socket.id} join Root Auth Error, reason:${e.reason}`);
 
-                    this.disconnect(socket, e.reason)
+                    IoUtils.disconnect(socket, this.log, e.reason)
                 })
         });
     }
