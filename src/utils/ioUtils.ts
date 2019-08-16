@@ -90,4 +90,18 @@ export class IoUtils {
         logger.info(`Disconnect socket:${socket.id}, reason:${reason}`);
         socket.disconnect(true)
     }
+
+    /**
+     * Get Socket's client Ip
+     *
+     * @param socket
+     * @param options
+     */
+    static getIp(socket: any, options: any){
+
+        if(options.behind_proxy)
+            return socket.handshake.headers['x-forwarded-for']
+
+        return socket.handshake.address;
+    }
 }

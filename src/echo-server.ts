@@ -161,19 +161,6 @@ export class EchoServer {
         }
     }
 
-
-    /**
-     * Disconnect a Socket
-     *
-     * @param socket
-     * @param reason
-     */
-   /* disconnect(socket: any, reason: string){
-        Log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
-        this.log.info(`Disconnect socket:${socket.id}, reason:${reason}`);
-        socket.disconnect(true)
-    }*/
-
     /**
      * Broadcast events to channels from subscribers.
      */
@@ -219,11 +206,14 @@ export class EchoServer {
                             this.log,
                             'Laravel Auth Failed for user id:' + auth.channel_data.user_id,
                         );
-
+                    
+                    //console.log(socket.adapter.nsp.sockets)
                     socket.user_id = auth.channel_data.user_id;
 
-                    Log.success(`User Id:${socket.user_id} AUTH Success ON NSP / SocketID: ${socket.id}`);
-                    this.log.info(`User Id:${socket.user_id} with Socket:${socket.id} Auth Success ON NSP / Root Channel`);
+                    const ip = IoUtils.getIp(socket, this.options);
+
+                    Log.success(`AUTH Success ON NSP / User Id:${socket.user_id} SocketID: ${socket.id} with IP:${ip}`);
+                    this.log.info(`Auth Success ON NSP / User Id:${socket.user_id} with Socket:${socket.id} with IP:${ip}`);
                     return this.startSubscribers(socket);
 
                 })

@@ -48,5 +48,6 @@ export const options = {
             "laravel_port": 7718
         }
     },
-    "console_log": true
+    "console_log": true,
+    "behind_proxy": false
 };
