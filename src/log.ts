@@ -28,6 +28,7 @@ export class Log {
      * @return {void}
      */
     static title(message: any, force: boolean = false): void {
+        if(options.console_log == false) return;
         if(force) {
             console.log(colors.bold(message));
             return;
@@ -45,7 +46,7 @@ export class Log {
      * @return {void}
      */
     static subtitle(message: any, force: boolean = false): void {
-
+        if(options.console_log == false) return;
         if(force) {
             console.log(colors.h2.bold(message));
             return;
@@ -63,6 +64,7 @@ export class Log {
      * @return {void}
      */
     static info(message: any, force: boolean = false): void {
+        if(options.console_log == false) return;
         if(force) {
             console.log(colors.info(message));
             return;
@@ -80,6 +82,7 @@ export class Log {
      * @return {void}
      */
     static success(message: any, force: boolean = false): void {
+        if(options.console_log == false) return;
         if(force) {
             console.log(colors.green('\u2714 '), message);
             return;
@@ -98,6 +101,7 @@ export class Log {
      * @return {void}
      */
     static error(message: any, force: boolean = false): void {
+        if(options.console_log == false) return;
         if(force) {
             console.log(colors.error(message));
             return;
@@ -114,6 +118,7 @@ export class Log {
      * @return {void}
      */
     static warning(message: any, force: boolean = false): void {
+        if(options.console_log == false) return;
         if(force) {
             console.log(colors.warn('\u26A0 ' + message));
             return;

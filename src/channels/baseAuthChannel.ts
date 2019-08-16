@@ -152,6 +152,7 @@ export class BaseAuthChannel {
      * Prepare headers for request to app server.
      */
     protected prepareHeaders(socket: any): any {
+
         let headers = {};
 
         headers['Cookie'] = socket.request.headers.cookie;
@@ -161,9 +162,15 @@ export class BaseAuthChannel {
 
         if (socket.request.headers['Authorization']) {
             headers['Authorization'] = socket.request.headers['Authorization']
+            Log.success("Bearer Authorization");
+        } else if (socket.request.headers['authorization']) {
+            headers['Authorization'] = socket.request.headers['authorization']
+            Log.success("Bearer Authorization");
         } else if (socket.request._query.token) {
             headers['Authorization'] = ' Bearer ' + socket.request._query.token;
+            Log.success("Query Token Authorization");
         } else {
+            Log.success("JWT_TOKEN Cookie Authorization");
             const cookies = cookie.parse(socket.request.headers.cookie);
             headers['Authorization'] = ' Bearer ' + cookies['jwt_token'];
         }

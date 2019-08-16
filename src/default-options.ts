@@ -12,7 +12,7 @@ export const options = {
             "databasePath": "/dist/database/laravel-echo-server.sqlite"
         }
     },
-    "devMode": false,
+    "devMode": true,
     "testMode": false,
     "host": null,
     "port": 6001,
@@ -47,5 +47,6 @@ export const options = {
         "mock": {
             "laravel_port": 7718
         }
-    }
+    },
+    "console_log": true
 };

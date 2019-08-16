@@ -5,4 +5,6 @@ import {FsUtils} from "../utils/fsUtils";
 
 let mock = new MockLaravel(FsUtils.getConfigfile());
 
-mock.init();
+mock.run().then(() => {
+    console.log('LaraMock Running')
+})

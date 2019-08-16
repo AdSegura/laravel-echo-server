@@ -89,7 +89,7 @@ export class MockLaravel {
     broadcasting(req: any, res: any): any {
         const channel = req.body.channel_name;
 
-        const bearer = req.headers.authentication;
+        const bearer = req.headers.authorization;
 
         if(! bearer) return this.response401(req, res);
 

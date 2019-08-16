@@ -140,6 +140,11 @@ template(name="bunyan" type="string"
 node_modules/bunyan/bin/bunyan /var/log/myapp.log
 ```
 
+### Tests 
+```sh
+$> npm run test
+```
+
 # Official Laravel Echo Server Doc 1.5.7
 
 

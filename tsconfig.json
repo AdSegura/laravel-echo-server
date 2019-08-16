@@ -16,6 +16,7 @@
     "src/index.ts",
     "src/cli/index.ts",
     "src/test/index.ts",
+    "src/test/start.mock.ts",
     "src/test/auth/index.ts"
   ],
   "exclude": [

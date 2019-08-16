@@ -317,20 +317,8 @@ export class Cli {
                 process.on('SIGHUP', process.exit);
                 process.on('SIGTERM', process.exit);
 
-                if(process.env['LARAVEL_ECHO_SERVER_TEST']){
-                    options.authHost =  `http://localhost:${options.dev.mock.laravel_port}`;
-                    options.devMode  =  true;
-                    options.log  =  "file";
+                echo.run(options);
 
-                    Log.info('Running TEST MODE');
-
-                    let mock = new MockLaravel(options);
-                    mock.run();
-                    echo.run(options);
-                } else {
-
-                    echo.run(options);
-                }
             });
         });
     }

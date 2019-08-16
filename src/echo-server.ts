@@ -222,7 +222,7 @@ export class EchoServer {
 
                     socket.user_id = auth.channel_data.user_id;
 
-                    Log.success(`User Id:${socket.user_id} AUTH Success ON NSP / Channel AKA Root Channel SocketID: ${socket.id}`);
+                    Log.success(`User Id:${socket.user_id} AUTH Success ON NSP / SocketID: ${socket.id}`);
                     this.log.info(`User Id:${socket.user_id} with Socket:${socket.id} Auth Success ON NSP / Root Channel`);
                     return this.startSubscribers(socket);
 
