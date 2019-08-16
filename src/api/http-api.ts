@@ -20,6 +20,7 @@ export class HttpApi {
      */
     init(): void {
         this.corsMiddleware();
+        this.corsMiddleware();
 
         this.express.get(
             '/',

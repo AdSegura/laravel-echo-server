@@ -104,6 +104,9 @@ export class BaseAuthChannel {
                         body = response.body
                     }
 
+                    console.log('.......................................')
+                    console.log(JSON.stringify(body))
+                    console.log('.......................................')
                     resolve(body);
                 }
             });

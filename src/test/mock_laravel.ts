@@ -1,0 +1,187 @@
+const express = require('express');
+const http = require('http');
+const bodyParser = require('body-parser');
+
+const channels = [
+    "root",
+    "presence",
+    "private"
+];
+
+const users = {1:1,2:2,3:3};
+
+/**
+ * Mock Laravel Broadcasting Auth Api
+ *
+ * http POST  :7718/auth/broadcasting channel_name=root 'Authentication: Bearer 1'
+ *
+ * auth user_id will be 1
+ */
+export class MockLaravel {
+
+    /** Express instance */
+    private express: any;
+
+    /** available Channels */
+    private channels: any;
+
+    /** available users*/
+    private users: any;
+
+    /**
+     * Create new instance of http subscriber.
+     *
+     */
+    constructor() {
+        this.channels = channels;
+        this.users = users;
+        this.express = express();
+        this.express.use(bodyParser.urlencoded({extended: true}));
+        this.express.use(bodyParser.json());
+        const httpServer = http.createServer(this.express);
+        httpServer.listen('7718');
+    }
+
+    /**
+     * Initialize the API.
+     */
+    init(): void {
+        this.express.get(
+            '/',
+            (req, res) => this.getRoot(req, res),
+        );
+        this.express.post(
+            '/auth/broadcasting',
+            (req, res) => this.broadcasting(req, res),
+        );
+    }
+
+    /**
+     * Broadcasting Laravel mock
+     *
+     * @param req
+     * @param res
+     */
+    broadcasting(req: any, res: any): any {
+        const channel = req.body.channel_name;
+
+        const bearer = req.headers.authentication;
+
+        if(! bearer) return this.response401(req, res);
+
+        const user_id = parseInt(bearer.split(' ')[1]);
+
+        if(!user_id) return this.response401(req, res);
+
+        switch (channel) {
+            case 'root': {
+                this.authorizeRoot(channel, user_id, auth => {
+                    if(auth === false) return this.response401(req, res);
+                    res.json(auth);
+                });
+                break;
+            }
+
+            case 'presence': {
+                this.authorizePresence(channel, user_id, auth => {
+                    if(auth === false) return this.response401(req, res);
+                    res.json(auth);
+                });
+                break;
+            }
+
+            case 'private': {
+                this.authorizePrivate(channel, user_id, auth => {
+                    if(auth === false) return this.response401(req, res);
+                    res.json(auth);
+                });
+                break;
+            }
+
+            default: {
+                this.badResponse(req, res, 'unknown channel')
+            }
+        }
+    }
+
+    /**
+     * authorize Root Channel
+     *
+     * @param channel
+     * @param user_id
+     * @param cb
+     */
+    authorizeRoot(channel: string, user_id: number, cb: any): any {
+
+        if(this.users[user_id])
+            return cb({"channel_data":{"user_id":user_id,"user_info":{"id":user_id}}});
+
+        return cb(false);
+    }
+
+    /**
+     * authorize Presence
+     *
+     * @param channel
+     * @param user_id
+     * @param cb
+     */
+    authorizePresence(channel: string, user_id: number, cb: any): any {
+        if(this.users[user_id])
+            return cb({"channel_data":{"user_id":user_id,"user_info":{"id":user_id}}});
+
+        return cb(false);
+    }
+
+    /**
+     * authorize Private
+     *
+     * @param channel
+     * @param user_id
+     * @param cb
+     */
+    authorizePrivate(channel: string, user_id: number, cb: any): any {
+
+        if(this.users[user_id]) return cb(true);
+
+        return cb(false);
+    }
+
+    /**
+     * Outputs a simple message to show that the server is running.
+     *
+     * @param {any} req
+     * @param {any} res
+     */
+    getRoot(req: any, res: any): void {
+        res.send('OK');
+    }
+
+    /**
+     * Handle bad requests.
+     *
+     * @param  {any} req
+     * @param  {any} res
+     * @param  {string} message
+     * @return {boolean}
+     */
+    badResponse(req: any, res: any, message: string): boolean {
+        res.statusCode = 400;
+        res.json({ error: message });
+
+        return false;
+    }
+
+    /**
+     * send 401 response
+     *
+     * @param req
+     * @param res
+     */
+    response401(req: any, res: any): boolean {
+        res.statusCode = 401;
+        res.json({ message: 'Unauthorized' });
+
+        return false;
+    }
+}
