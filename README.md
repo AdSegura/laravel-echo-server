@@ -29,21 +29,21 @@
 }
 ```
 
-###### app_name:
+##### app_name:
 For logging purpose.
 
-###### command_channel:
+##### command_channel:
 Name for the channel, Echo and Laravel will use, to communicate commands.
 
-###### log:
+##### log:
 This option will define where logs are send.
 * file
 * syslog
 
-###### log_folder:
+##### log_folder:
 file logs folder 
 
-###### syslog:
+##### syslog:
 Syslog configuration options
 * host
 * port
@@ -53,27 +53,27 @@ Syslog configuration options
     * upd
     * tcp
     
-###### multiple_sockets:
+##### multiple_sockets:
 Allow multiple sockets per user.
 * true
 * false
 
-###### console_log:
+##### console_log:
 Allow to silent console.log output for cleaner test output
 * true
 * false
 
-###### behind_proxy:
+##### behind_proxy:
 If Echo is behind a proxy will get the client's Ip from X-forward headers.
 * true
 * false
 
 # Laravel backend 
-#### routes/channels.php
+##### routes/channels.php
 ```php
 Broadcast::channel('root', AuthSocket::class);
 ```
-#### Broadcasting/AuthSocket.php
+##### Broadcasting/AuthSocket.php
 ```php
 public function join(User $user)
 {
@@ -89,10 +89,10 @@ public function join(User $user)
     return $user->id;
 }
 ```
-### If only allow one socket per user
+#### If only allow one socket per user
 You have to create new Event on Laravel
 
-#### Events/EchoServerCommand.php
+###### Events/EchoServerCommand.php
 ```php
 class EchoServerCommand implements ShouldBroadcast
 {
@@ -124,7 +124,7 @@ class EchoServerCommand implements ShouldBroadcast
 }
 ```
 
-#### User.php
+##### User.php
 
 ```php
 public function disconnect()
@@ -138,16 +138,16 @@ public function disconnect()
 }
 ```
 
-## Http Api KickOff User by Id
+#### Http Api Kickoff User by Id
 ```sh
 http POST ":4000/apps/:appID/channels/leave/:channelName/user/:user_id?auth_key=:auth_key"
 ```
 
-## Rsyslog Server Conf example
+#### Rsyslog Server Conf example
 
 Make rsyslog listen localhost:514:udp
  
-###### rsyslogd.conf 
+##### rsyslogd.conf 
 ```sh
 #################
 #### MODULES ####
@@ -163,7 +163,7 @@ input(type="imudp" port="514" Address="127.0.0.1")
 
 Route laravel-echo-server logs to myapp.log file
 
-###### rsyslog.d/01-myapp.conf
+##### rsyslog.d/01-myapp.conf
 ```sh
 template(name="bunyan" type="string"
          string="%msg:R,ERE,1,FIELD:(\\{.*\\})--end%\n")
@@ -181,7 +181,7 @@ node_modules/bunyan/bin/bunyan /var/log/myapp.log
 
 ## Tests 
 ```sh
-$> npm run test
+$> npm run build && npm run test
 ```
 
 ### Laravel Echo Auth and Message Flow
