@@ -14,7 +14,7 @@ export const options = {
     },
     "devMode": true,
     "testMode": false,
-    "host": null,
+    "host": 'localhost',
     "port": 6001,
     "protocol": "http",
     "socketio": {},

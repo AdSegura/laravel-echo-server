@@ -1,6 +1,6 @@
 # Laravel Echo Server Fork 
 
-#### Laravel Echo 1.5.7 Fork:
+#### Laravel Echo 1.5.7 Adseg New Features:
 
 * Auth user on connect event (closing socket if fails to)
 * JWT Cookie Auth
@@ -8,7 +8,7 @@
 * one or multiple sockets allowed
 * syslog | file logging
 * close user's sockets from Laravel
-* kickOff user's from channels
+* kickOff users from channels
 
 ### new Options Added
 ```json
@@ -23,10 +23,52 @@
         "facility": "local0",
         "type": "sys"
     },
-    "multiple_sockets": false
+    "multiple_sockets": false,
+    "console_log": true,
+    "behind_proxy": false
 }
 ```
 
+###### app_name:
+For logging purpose.
+
+###### command_channel:
+Name for the channel, Echo and Laravel will use, to communicate commands.
+
+###### log:
+This option will define where logs are send.
+* file
+* syslog
+
+###### log_folder:
+file logs folder 
+
+###### syslog:
+Syslog configuration options
+* host
+* port
+* facility
+* type
+    * sys
+    * upd
+    * tcp
+    
+###### multiple_sockets:
+Allow multiple sockets per user.
+* true
+* false
+
+###### console_log:
+Allow to silent console.log output for cleaner test output
+* true
+* false
+
+###### behind_proxy:
+If Echo is behind a proxy will get the client's Ip from X-forward headers.
+* true
+* false
+
+# Laravel backend 
 #### routes/channels.php
 ```php
 Broadcast::channel('root', AuthSocket::class);
@@ -34,22 +76,18 @@ Broadcast::channel('root', AuthSocket::class);
 #### Broadcasting/AuthSocket.php
 ```php
 public function join(User $user)
-    {
-        if((int) $user->id !== (int) Auth::user()->id)
-                   return false;
+{
+    if((int) $user->id !== (int) Auth::user()->id)
+        return false;
        
-               $socket_id = request()->header('x-socket-id');
+    $multiple_sockets = request()->input('multiple_sockets');
        
-               if(! $socket_id) return false;
-       
-               $multiple_sockets = request()->input('multiple_sockets');
-       
-               if($multiple_sockets == false) {
-                   $user->disconnect();
-               }
-       
-               return $user->id;
+    if($multiple_sockets == false) {
+        $user->disconnect();
     }
+       
+    return $user->id;
+}
 ```
 ### If only allow one socket per user
 You have to create new Event on Laravel
@@ -89,22 +127,23 @@ class EchoServerCommand implements ShouldBroadcast
 #### User.php
 
 ```php
- public function disconnect()
-    {
-        event(new EchoServerCommand([
-            "execute" => "close_socket",
-            "data" => $this->id
-        ]));
+public function disconnect()
+{
+    event(new EchoServerCommand([
+        "execute" => "close_socket",
+        "data" => $this->id
+    ]));
 
-        return $this;
-    }
+    return $this;
+}
 ```
 
-#### Http Api KickOff
+## Http Api KickOff User by Id
 ```sh
 http POST ":4000/apps/:appID/channels/leave/:channelName/user/:user_id?auth_key=:auth_key"
 ```
-### Rsyslog Server Conf example
+
+## Rsyslog Server Conf example
 
 Make rsyslog listen localhost:514:udp
  
@@ -135,15 +174,19 @@ template(name="bunyan" type="string"
 }
 ``` 
 
-###### Now you can use bunyan to parse logs 
+##### Now you can use bunyan to parse logs 
 ```sh
 node_modules/bunyan/bin/bunyan /var/log/myapp.log
 ```
 
-### Tests 
+## Tests 
 ```sh
 $> npm run test
 ```
+
+### Laravel Echo Auth and Message Flow
+![Auth Flow, Message Flow](laravelEcho.png)
+
 
 # Official Laravel Echo Server Doc 1.5.7
 

@@ -206,7 +206,7 @@ export class EchoServer {
                             this.log,
                             'Laravel Auth Failed for user id:' + auth.channel_data.user_id,
                         );
-                    
+
                     //console.log(socket.adapter.nsp.sockets)
                     socket.user_id = auth.channel_data.user_id;
 

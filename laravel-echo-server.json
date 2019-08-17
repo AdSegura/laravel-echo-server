@@ -20,7 +20,7 @@
     },
     "devMode": true,
     "testMode": false,
-    "host": null,
+    "host": "localhost",
     "port": "4000",
     "protocol": "http",
     "socketio": {},

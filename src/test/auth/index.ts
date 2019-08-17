@@ -15,9 +15,11 @@ options.devMode = true;
 options.log = "file";
 options.console_log = false;
 
+const ioUrl = `${options.protocol}://${options.host}:${options.port}`;
+
 const mockLaravel = new MockLaravel(options);
 
-describe('basic socket.io example', function () {
+describe('Laravel Echo Auth Methods', function () {
 
     /** setup echo server and mock Laravel Server*/
     before(function (done) {
@@ -39,7 +41,7 @@ describe('basic socket.io example', function () {
 
         let echo_client = new Echo({
             broadcaster: 'socket.io',
-            host: 'http://localhost:4000',
+            host: ioUrl,
             client: io,
             transportOptions: {
                 polling: {
@@ -60,7 +62,7 @@ describe('basic socket.io example', function () {
 
         let echo_client = new Echo({
             broadcaster: 'socket.io',
-            host: 'http://localhost:4000',
+            host: ioUrl,
             client: io,
             transportOptions: {
                 polling: {
@@ -81,7 +83,7 @@ describe('basic socket.io example', function () {
 
         let echo_client = new Echo({
             broadcaster: 'socket.io',
-            host: 'http://localhost:4000?token=332',
+            host: `${ioUrl}?token=332`,
             client: io,
         });
 
@@ -95,7 +97,7 @@ describe('basic socket.io example', function () {
 
         let echo_client = new Echo({
             broadcaster: 'socket.io',
-            host: 'http://localhost:4000?token=2',
+            host: `${ioUrl}?token=2`,
             client: io,
         });
 
@@ -103,34 +105,13 @@ describe('basic socket.io example', function () {
             expect(echo_client.connector.socket.connected).to.be.true;
             done();
         });
-    })
-
-    it('should Authenticate Correctly with Cookie Token', done => {
-
-        let echo_client = new Echo({
-            broadcaster: 'socket.io',
-            host: 'http://localhost:4000',
-            client: io,
-            transportOptions: {
-                polling: {
-                    extraHeaders: {
-                        'Cookie': 'jwt_token=3'
-                    }
-                }
-            }
-        });
-
-        echo_client.connector.socket.on('connect', () => {
-            expect(echo_client.connector.socket.connected).to.be.true;
-            done();
-        });
-    })
+    });
 
     it('should Fail Authenticate with Cookie Token', done => {
 
         let echo_client = new Echo({
             broadcaster: 'socket.io',
-            host: 'http://localhost:4000',
+            host: ioUrl,
             client: io,
             transportOptions: {
                 polling: {
@@ -145,6 +126,28 @@ describe('basic socket.io example', function () {
             expect(echo_client.connector.socket.connected).to.be.false;
             done();
         });
-    })
+    });
+
+    it('should Authenticate Correctly with Cookie Token', done => {
+
+        let echo_client = new Echo({
+            broadcaster: 'socket.io',
+            host: ioUrl,
+            client: io,
+            transportOptions: {
+                polling: {
+                    extraHeaders: {
+                        'Cookie': 'jwt_token=3'
+                    }
+                }
+            }
+        });
+
+        echo_client.connector.socket.on('connect', () => {
+            expect(echo_client.connector.socket.connected).to.be.true;
+            done();
+        });
+    });
+
 
 });
