@@ -8,11 +8,19 @@
             "key": "61ec53be69c3841f451c0d3d7df81edb"
         }
     ],
-    "database": "sqlite",
+    "database": "redis",
+    "cluster": {
+        "adapter": {
+            "redis": {
+                "port": "6379",
+                "host": "redis.local"
+            }
+        }
+    },
     "databaseConfig": {
         "redis": {
             "port": "6379",
-            "host": "redis.local"
+            "host": "127.0.0.1"
         },
         "sqlite": {
             "databasePath": "/dist/database/laravel-echo-server.sqlite"

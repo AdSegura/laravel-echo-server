@@ -1,5 +1,7 @@
 # Laravel Echo Server Fork 
 
+## Cluster Mode
+
 #### Laravel Echo 1.5.7 Adseg New Features:
 
 * Auth user on connect event (closing socket if fails to)

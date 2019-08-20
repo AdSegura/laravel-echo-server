@@ -1,5 +1,4 @@
 import { DatabaseDriver } from './database-driver';
-import { SQLiteDatabase } from './sqlite';
 import { RedisDatabase } from './redis';
 import { Log } from './../log';
 
@@ -16,13 +15,7 @@ export class Database implements DatabaseDriver {
      * Create a new database instance.
      */
     constructor(private options: any) {
-        if (options.database == 'redis') {
-            this.driver = new RedisDatabase(options);
-        } else if (options.database == 'sqlite') {
-            this.driver = new SQLiteDatabase(options);
-        } else {
-            Log.error('Database driver not set.');
-        }
+        this.driver = new RedisDatabase(options);
     }
 
     /**
@@ -37,5 +30,21 @@ export class Database implements DatabaseDriver {
      */
     set(key: string, value: any): void {
         this.driver.set(key, value);
+    };
+
+    getMembers(key: string): Promise<any> {
+        return this.driver.getMembers(key);
+    };
+
+    isMember(key: string, value: any): Promise<any> {
+       return this.driver.isMember(key, value);
+    };
+
+    setMember(key: string, value: any): void {
+        this.driver.setMember(key, value);
+    };
+
+    delMember(key: string, value: any): void {
+        this.driver.delMember(key, value);
     };
 }

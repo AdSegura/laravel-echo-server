@@ -37,4 +37,40 @@ export class RedisDatabase implements DatabaseDriver {
             }));
         }
     }
+
+    /**
+     * Store data to cache.
+     */
+    setMember(key: string, value: any): void {
+        this._redis.sadd(key, JSON.stringify(value));
+    }
+
+    /**
+     * Store data to cache.
+     */
+    delMember(key: string, value: any): void {
+        this._redis.srem(key, JSON.stringify(value));
+    }
+
+    /**
+     * Retrieve data from redis.
+     */
+    isMember(key: string, channel: string): Promise<any> {
+        return new Promise<any>((resolve, reject) => {
+            this._redis.sismember(channel, key).then(value => resolve(value));
+        });
+    }
+
+    /**
+     * Retrieve data from redis.
+     */
+    getMembers(channel: string): Promise<any> {
+        return new Promise<any>((resolve, reject) => {
+            this._redis.smembers(channel).then(value => {
+                resolve(value.map(user => {
+                    return JSON.parse(user);
+                }))
+            });
+        });
+    }
 }

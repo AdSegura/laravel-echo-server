@@ -21,12 +21,14 @@ export class PresenceChannel {
      */
     getMembers(channel: string): Promise<any> {
         return this.db.get(channel + ':members');
+        //return this.db.getMembers(channel);
     }
 
     /**
      * Check if a user is on a presence channel.
      */
     isMember(channel: string, member: any): Promise<boolean> {
+        Log.success(`Is Member channel: ${channel}, member ${JSON.stringify(member)}`)
         return new Promise((resolve, reject) => {
             this.getMembers(channel).then(members => {
                 this.removeInactive(channel, members, member).then((members: any) => {
@@ -44,16 +46,20 @@ export class PresenceChannel {
 
     /**
      * Remove inactive channel members from the presence channel.
+     * //TODO REMOVE INACTIVE SOCKETS (clients) FORM IO?
      */
     removeInactive(channel: string, members: any[], member: any): Promise<any> {
+
         return new Promise((resolve, reject) => {
             this.io.of('/').in(channel).clients((error, clients) => {
+                Log.success(`Remove Inactive, active Members: ${JSON.stringify(members)}`)
+                Log.success(`Remove Inactive, active clients from IO: ${clients}`)
                 members = members || [];
                 members = members.filter(member => {
                     return clients.indexOf(member.socketId) >= 0;
                 });
-
-                this.db.set(channel + ':members', members);
+                Log.success(`Remove Inactive, DB set active MEMBERS: ${JSON.stringify(members)}`)
+                this.db.set(channel + ':members', members); //set new whole members
 
                 resolve(members);
             });
@@ -76,6 +82,8 @@ export class PresenceChannel {
                 member.socketId = socket.id;
                 members.push(member);
 
+                //todo cluster mode
+                Log.success(`On JOIN, DB set active MEMBERS: ${JSON.stringify(members)}`)
                 this.db.set(channel + ':members', members);
 
                 members = _.uniqBy(members.reverse(), 'user_id');
@@ -116,6 +124,7 @@ export class PresenceChannel {
      * On join event handler.
      */
     onJoin(socket: any, channel: string, member: any): void {
+        Log.success(`On JOIN, SocketId:${socket.id}, channel:${channel}, MEMBER: ${JSON.stringify(member)}`)
         this.io
             .sockets
             .connected[socket.id]
@@ -137,6 +146,7 @@ export class PresenceChannel {
      * On subscribed event emitter.
      */
     onSubscribed(socket: any, channel: string, members: any[]) {
+        Log.success(`On SUBSCRIBED, Channel ${channel} io.to(${socket.id}).emit('presence:subscribed', channel, members): ${JSON.stringify(members)}`)
         this.io
             .to(socket.id)
             .emit('presence:subscribed', channel, members);
