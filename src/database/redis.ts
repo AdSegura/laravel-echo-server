@@ -1,4 +1,5 @@
 import { DatabaseDriver } from './database-driver';
+import {Log} from "../log";
 var Redis = require('ioredis');
 
 export class RedisDatabase implements DatabaseDriver {
@@ -42,6 +43,7 @@ export class RedisDatabase implements DatabaseDriver {
      * Store data to cache.
      */
     setMember(key: string, value: any): void {
+        Log.success(`REDIS SetMember on Channel: ${key}, Members: ${JSON.stringify(value)}`)
         this._redis.sadd(key, JSON.stringify(value));
     }
 
@@ -64,10 +66,20 @@ export class RedisDatabase implements DatabaseDriver {
     /**
      * Retrieve data from redis.
      */
+    getMember(key: string, channel: string): Promise<any> {
+        return new Promise<any>((resolve, reject) => {
+            this._redis.sismember(channel, key).then(value => resolve(value));
+        });
+    }
+
+    /**
+     * Retrieve data from redis.
+     */
     getMembers(channel: string): Promise<any> {
         return new Promise<any>((resolve, reject) => {
-            this._redis.smembers(channel).then(value => {
-                resolve(value.map(user => {
+            this._redis.smembers(channel).then(members => {
+                Log.success(`REDIS SMEMBERS on Channel: ${channel}, Members: ${JSON.stringify(members)}`)
+                resolve(members.map(user => {
                     return JSON.parse(user);
                 }))
             });

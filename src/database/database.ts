@@ -1,6 +1,5 @@
 import { DatabaseDriver } from './database-driver';
-import { RedisDatabase } from './redis';
-import { Log } from './../log';
+import {MongoDatabase} from "./mongo";
 
 /**
  * Class that controls the key/value data store.
@@ -15,7 +14,7 @@ export class Database implements DatabaseDriver {
      * Create a new database instance.
      */
     constructor(private options: any) {
-        this.driver = new RedisDatabase(options);
+        this.driver = new MongoDatabase(options);
     }
 
     /**
@@ -36,6 +35,10 @@ export class Database implements DatabaseDriver {
         return this.driver.getMembers(key);
     };
 
+    getMember(key: string, value: any): Promise<any> {
+        return this.driver.isMember(key, value);
+    };
+
     isMember(key: string, value: any): Promise<any> {
        return this.driver.isMember(key, value);
     };
@@ -47,4 +50,12 @@ export class Database implements DatabaseDriver {
     delMember(key: string, value: any): void {
         this.driver.delMember(key, value);
     };
+
+    getMemberBySocketId(channel: string, member: any): Promise<any>{
+        return this.driver.getMemberBySocketId(channel, member);
+    }
+
+    removeInactive(channel: string, member: any): Promise<any>{
+        return this.driver.removeInactive(channel, member);
+    }
 }
