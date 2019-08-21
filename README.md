@@ -2,8 +2,10 @@
 
 ## Cluster Mode
 
-#### Laravel Echo 1.5.7 Adseg New Features:
+#### Laravel Echo 1.5.7 Adseg Culter Mode New Features:
 
+* Cluster Mode with socket.io-redis adapter
+* MongoDb to Store presence channel members
 * Auth user on connect event (closing socket if fails to)
 * JWT Cookie Auth
 * JWT query ?token= Auth 
@@ -12,13 +14,35 @@
 * close user's sockets from Laravel
 * kickOff users from channels
 
-### new Options Added
+### new Options Added and Deleted on Cluster Mode
+
+No longer support for Sqlite and Redis to store presence channel info.
+
+MongoDb is the database responsible to store presence channels members.
+
 ```json
 {
     "app_name": "myApp",
     "command_channel": "private-echo.server.commands",
     "log": "file",
     "log_folder": "../../logs/",
+    "cluster": {
+            "adapter": {
+                "redis": { 
+                    "port": "6379",
+                    "host": "redis.local"
+                }
+            }
+        },
+    "databaseConfig": {
+            "mongo": {
+                "host": "127.0.0.1",
+                "port": "27017",
+                "dbName": "presence",
+                "user": null,
+                "password": null
+            }
+        },
     "syslog": {
         "host": "127.0.0.1",
         "port": "514",
@@ -44,6 +68,14 @@ This option will define where logs are send.
 
 ##### log_folder:
 file logs folder 
+
+##### cluster Redis Adapter:
+Redis configuration for [socket.io-redis package](https://github.com/socketio/socket.io-redis)
+
+##### Database Config:
+[MongoDb Native](https://mongodb.github.io/node-mongodb-native/) 
+is used now to store presence channels members
+
 
 ##### syslog:
 Syslog configuration options

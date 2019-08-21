@@ -8,7 +8,6 @@
             "key": "61ec53be69c3841f451c0d3d7df81edb"
         }
     ],
-    "database": "redis",
     "cluster": {
         "adapter": {
             "redis": {
@@ -18,12 +17,12 @@
         }
     },
     "databaseConfig": {
-        "redis": {
-            "port": "6379",
-            "host": "127.0.0.1"
-        },
-        "sqlite": {
-            "databasePath": "/dist/database/laravel-echo-server.sqlite"
+        "mongo": {
+            "host": "127.0.0.1",
+            "port": "27017",
+            "dbName": "presence",
+            "user": null,
+            "password": null
         }
     },
     "devMode": true,

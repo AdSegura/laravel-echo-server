@@ -132,11 +132,6 @@ export class Cli {
                 default: '6001',
                 message: 'Which port would you like to serve from?'
             }, {
-                name: 'database',
-                message: 'Which database would you like to use to store presence channel members?',
-                type: 'list',
-                choices: ['redis', 'sqlite']
-            }, {
                 name: 'authHost',
                 default: 'http://localhost',
                 message: 'Enter the host of your Laravel authentication server.',

@@ -5,7 +5,6 @@ export const options = {
     "authHost": "http://localhost",
     "authEndpoint": "/broadcasting/auth",
     "clients": [],
-    "database": "redis", //cluster mode must use redis not sqlite
     "cluster": {
         "adapter": {
             "redis": { // Redis instance MUST be different than Echo-Laravel Redis instance
@@ -15,13 +14,13 @@ export const options = {
         }
     },
     "databaseConfig": {
-        "redis": { // Redis instance MUST be different than Cluster Redis instance
-            "port": "6379",
-            "host": "127.0.0.1"
+        "mongo": {
+            "host": "127.0.0.1",
+            "port": "27017",
+            "dbName": "presence",
+            "user": null,
+            "password": null
         },
-        "sqlite": {
-            "databasePath": "/dist/database/laravel-echo-server.sqlite"
-        }
     },
     "devMode": true,
     "testMode": false,

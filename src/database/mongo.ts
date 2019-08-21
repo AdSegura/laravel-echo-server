@@ -1,25 +1,36 @@
 import { DatabaseDriver } from './database-driver';
 import {Log} from "../log";
 const MongoClient = require('mongodb').MongoClient;
-const url = 'mongodb://localhost';
-const dbName = 'presence';
 
 export class MongoDatabase implements DatabaseDriver {
-    /**
-     * Redis client.
-     */
+
+    /** mongo instance.*/
     private _mongo: any;
-    private presence_channel: any;
+
+    /** mongo client */
     private db: any;
 
     /**
      * Create a new cache instance.
      */
     constructor(private options) {
-        this._mongo = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
-        this.connect(dbName);
+
+        this._mongo = new MongoClient(
+            this.url(),
+            {
+                useNewUrlParser: true,
+                useUnifiedTopology: true
+            });
+
+
+        this.connect(this.options.databaseConfig.mongo.dbName);
     }
 
+    /**
+     * Connect top Mongo set up this.db
+     *
+     * @param dbName
+     */
     connect (dbName: string): any{
         this._mongo.connect((err) => {
 
@@ -33,22 +44,33 @@ export class MongoDatabase implements DatabaseDriver {
         });
     }
 
-
     /**
-     * Retrieve data from redis.
+     * Set up Url mongo
      */
-    get(key: string): Promise<any> {
-        return new Promise<any>((resolve, reject) => {
-            this._mongo.get(key).then(value => resolve(JSON.parse(value)));
-        });
+    private url(): string{
+
+        if(! this.options.databaseConfig.mongo)
+            throw new Error('No database Mongo config found!');
+
+        let url = 'mongodb://';
+
+        const user = this.options.databaseConfig.mongo.user;
+        const password = this.options.databaseConfig.mongo.password;
+
+        if(user){
+            url += user;
+            if(password)
+                url += `:${password}@`;
+
+            url += ":''@";
+        }
+
+        url += this.options.databaseConfig.mongo.host;
+        url += `:${this.options.databaseConfig.mongo.port}`;
+
+        return url;
     }
 
-    /**
-     * Store data to cache.
-     */
-    set(key: string, value: any): void {
-
-    }
 
     /**
      * Store data to cache.

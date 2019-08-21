@@ -13,14 +13,13 @@ export class PresenceChannel {
      * Create a new Presence channel instance.
      */
     constructor(private io, private options: any, protected log: any) {
-        this.db = new Database(options);
+        this.db = new Database(this.options);
     }
 
     /**
      * Get the members of a presence channel.
      */
     getMembers(channel: string): Promise<any> {
-        //return this.db.get(channel + ':members');
         return this.db.getMembers(channel);
     }
 
@@ -40,19 +39,17 @@ export class PresenceChannel {
 
     /**
      * Remove inactive channel members from the presence channel.
-     * //TODO REMOVE INACTIVE SOCKETS (clients) FORM IO?
+     *
      */
     removeInactive(channel: string): Promise<any> {
 
         return new Promise((resolve, reject) => {
             this.io.of('/').in(channel).clients((error, clients) => {
-
                 Log.success(`Remove Inactive from Chnnel ${channel}, active Sockets from IO: ${clients}`)
-
-                return this.db.removeInactive(channel, clients).then(() => {
-                    return resolve()
+                return this.db.removeInactive(channel, clients)
+                    .then(() => {
+                        return resolve()
                 }).catch(e => reject(e))
-
             });
         });
     }
@@ -83,9 +80,9 @@ export class PresenceChannel {
 
                     this.onSubscribed(socket, channel, members);
 
-                    if (!is_member) {
+                    if (!is_member)
                         this.onJoin(socket, channel, member);
-                    }
+
                 }, error => Log.error(error));
             }, (e) => {
                 Log.error('Error retrieving presence channel members ' + e.message);
