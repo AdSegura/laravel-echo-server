@@ -1,3 +1,5 @@
+import {Logger} from "./log/logger";
+
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
@@ -32,7 +34,7 @@ export class Server {
     /**
      * Create a new server instance.
      */
-    constructor(private options, protected log) {
+    constructor(private options: any, protected log: Logger) {
         this.server_id = this.generateServerId();
     }
 

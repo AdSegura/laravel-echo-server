@@ -1,9 +1,10 @@
 import {IoUtils} from "../utils/ioUtils";
 import {Log} from "../log";
+import {Logger} from "../log/logger";
 
 export class CommandChannel {
 
-    constructor(private options: any, protected io: any, protected log: any){
+    constructor(private options: any, protected io: any, protected log: Logger){
 
     }
 

@@ -1,19 +1,16 @@
+import {Logger} from "../log/logger";
+
 var _ = require('lodash');
 import { Channel } from './channel';
 import { Database } from './../database';
 import { Log } from './../log';
 
 export class PresenceChannel {
-    /**
-     * Database instance.
-     */
-    db: Database;
 
     /**
      * Create a new Presence channel instance.
      */
-    constructor(private io, private options: any, protected log: any) {
-        this.db = new Database(this.options);
+    constructor(private io, private options: any, protected log: Logger, protected db: Database) {
     }
 
     /**

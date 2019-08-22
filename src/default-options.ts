@@ -17,7 +17,7 @@ export const options = {
         "mongo": {
             "host": "127.0.0.1",
             "port": "27017",
-            "dbName": "presence",
+            "dbName": "echo",
             "user": null,
             "password": null
         },

@@ -8,6 +8,8 @@ import {IoUtils} from "./utils/ioUtils";
 const packageFile = require('../package.json');
 import {FsUtils} from "./utils/fsUtils";
 import {CommandChannel} from "./channels/commandChannel";
+import {Database} from "./database";
+import {Logger} from "./log/logger";
 
 const defaultOptions = FsUtils.getConfigfile();
 
@@ -38,7 +40,10 @@ export class EchoServer {
     private httpApi: HttpApi;
 
     /** Log to syslog */
-    protected log: any;
+    protected log: Logger;
+
+    /** Database instance .*/
+    protected db: Database;
 
     /** Create a new instance. */
     constructor() {
@@ -55,11 +60,13 @@ export class EchoServer {
 
             this.options = Object.assign(this.defaultOptions, options);
 
-            this.log = new Bunyan(this.options);
+            this.log = new Logger(this.options);
 
             this.startup();
 
+            this.db = new Database(this.options, this.log);
             this.server = new Server(this.options, this.log);
+
 
             this.server.init().then(io => {
                 this.init(io).then(() => {
@@ -87,7 +94,8 @@ export class EchoServer {
      */
     init(io: any): Promise<any> {
         return new Promise((resolve, reject) => {
-            this.channel = new Channel(io, this.options, this.log);
+
+            this.channel = new Channel(io, this.options, this.log, this.db);
             this.commandChannel = new CommandChannel(this.options, io, this.log);
 
             this.subscribers = [];
@@ -109,9 +117,10 @@ export class EchoServer {
      */
     startup(): void {
         Log.title(`\nL A R A V E L  E C H O  S E R V E R  C L U S T E R\n`);
-        Log.info(`version ${packageFile.version}\n`);
+        Log.info(`version ${packageFile.version} Cluster \n`);
 
         Log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`, true);
+        Log.success(`Log Mode is ${this.options.log} mode`, true);
 
         this.log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`)
     }
@@ -211,12 +220,23 @@ export class EchoServer {
 
                     //console.log(socket.adapter.nsp.sockets)
                     socket.user_id = auth.channel_data.user_id;
+                    const ip = IoUtils.getIp(socket, this.options);
 
                     Log.success(`LOG Success on Server: ${this.server.getServerId()}`);
-                    //IoUtils.setActiveUserOnServer(this.server.getServerId(), auth.channel_data.user_id)
+                    //IoUtils.setActiveUserOnServer(this.server.getServerId(),
+                    // {user_id: auth.channel_data.user_id, socket_id: socket.id})
+                    // collection echo_users, {user_id:1, socket_id:2ff, server_id: foo1 })
+                    this.db.setUserInServer('echo_users', {
+                        user_id: auth.channel_data.user_id,
+                        socket_id: socket.id,
+                        server_id: this.server.getServerId(),
+                        ip: ip,
+                        date: new Date()
+                    });
 
                     if(this.options.multiple_sockets == false) {
                         Log.success(`close_all_user_sockets_except_this_socket ${socket.id}`);
+
                         IoUtils.close_all_user_sockets_except_this_socket(
                             auth.channel_data.user_id,
                             socket.id,
@@ -225,7 +245,10 @@ export class EchoServer {
                         );
                     }
 
-                    const ip = IoUtils.getIp(socket, this.options);
+                    this.db.removeInactiveSocketsInThisServer(
+                        'echo_users',
+                        IoUtils.getAllActiveSocketsInThisIoServer(this.server.io)
+                    );
 
                     Log.success(`AUTH Success ON NSP / User Id:${socket.user_id} SocketID: ${socket.id} with IP:${ip}`);
                     this.log.info(`Auth Success ON NSP / User Id:${socket.user_id} with Socket:${socket.id} with IP:${ip}`);
@@ -277,6 +300,7 @@ export class EchoServer {
      */
     onDisconnecting(socket: any): void {
         socket.on('disconnecting', (reason) => {
+            this.db.delUserInServerBySocketId('echo_users', socket.id);
             Object.keys(socket.rooms).forEach(room => {
                 if (room !== socket.id) {
                     this.channel.leave(socket, room, reason);

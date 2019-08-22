@@ -1,5 +1,6 @@
 import { DatabaseDriver } from './database-driver';
 import {MongoDatabase} from "./mongo";
+import {Logger} from "../log/logger";
 
 /**
  * Class that controls the key/value data store.
@@ -13,8 +14,8 @@ export class Database implements DatabaseDriver {
     /**
      * Create a new Mongo database instance.
      */
-    constructor(private options: any) {
-        this.driver = new MongoDatabase(this.options);
+    constructor(private options: any, protected log: Logger) {
+        this.driver = new MongoDatabase(this.options, this.log);
     }
 
 
@@ -44,5 +45,17 @@ export class Database implements DatabaseDriver {
 
     removeInactive(channel: string, member: any): Promise<any>{
         return this.driver.removeInactive(channel, member);
+    }
+
+    removeInactiveSocketsInThisServer(collection: string, sockets: any): Promise<any>{
+        return this.driver.removeInactiveSocketsInThisServer(collection, sockets);
+    }
+
+    setUserInServer(collection: string, user: any): void{
+        return this.driver.setUserInServer(collection, user);
+    };
+
+    delUserInServerBySocketId(collection: string, socket_id: any): void {
+        return this.driver.delUserInServerBySocketId(collection, socket_id);
     }
 }

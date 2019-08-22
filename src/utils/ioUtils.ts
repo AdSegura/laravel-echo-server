@@ -1,4 +1,5 @@
 import {Log} from "../log";
+import {Logger} from "../log/logger";
 
 export class IoUtils {
 
@@ -85,7 +86,7 @@ export class IoUtils {
      * @param reason
      * @param logger
      */
-    static disconnect(socket: any, logger: any, reason: string){
+    static disconnect(socket: any, logger: Logger, reason: string){
         Log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
         logger.info(`Disconnect socket:${socket.id}, reason:${reason}`);
         socket.disconnect(true)
@@ -100,7 +101,7 @@ export class IoUtils {
     static getIp(socket: any, options: any){
 
         if(options.behind_proxy)
-            return socket.handshake.headers['x-forwarded-for']
+            return socket.handshake.headers['x-forwarded-for'];
 
         return socket.handshake.address;
     }
@@ -112,7 +113,7 @@ export class IoUtils {
      * @param io
      * @param log
      */
-    static close_all_user_sockets(user_id: number, io: any, log: any): void{
+    static close_all_user_sockets(user_id: number, io: any, log: Logger): void{
 
         let user = this.findUser(user_id, io);
 
@@ -137,7 +138,7 @@ export class IoUtils {
      * @param io
      * @param log
      */
-    static close_all_user_sockets_except_this_socket(user_id: number, socket_id: string, io: any, log: any): void{
+    static close_all_user_sockets_except_this_socket(user_id: number, socket_id: string, io: any, log: Logger): void{
 
         let user = this.findUser(user_id, io);
 
@@ -153,5 +154,16 @@ export class IoUtils {
                     `close_all_user_sockets_except_this_socket ${socket_id} Laravel Close Socket Command`
                 );
         });
+    }
+
+    /**
+     * get All Active Sockets in This IoServer
+     *
+     * @param io
+     * @return array sockets_id
+     */
+    static getAllActiveSocketsInThisIoServer(io: any): any{
+        const sockets = io.sockets.clients();
+        return Object.keys(sockets.connected);
     }
 }

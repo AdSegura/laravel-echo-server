@@ -4,6 +4,19 @@
 export interface DatabaseDriver {
 
     /**
+     * set user on new Root channel Auth connection
+     */
+    setUserInServer(key: string, value: any): void;
+
+    /**
+     * Delete user from DB base on socket_id
+     *
+     * @param collection
+     * @param socket_id
+     */
+    delUserInServerBySocketId(collection: string, socket_id: any): void;
+
+    /**
      * get all members in channel
      */
     getMembers(key: string): Promise<any>;
@@ -45,4 +58,12 @@ export interface DatabaseDriver {
      * @param sockets array, active array socketsId on Io Channel
      */
     removeInactive(channel: string, sockets: any): Promise<any>;
+
+    /**
+     * Remove inactive sockets from this Io server
+     *
+     * @param collection
+     * @param sockets
+     */
+    removeInactiveSocketsInThisServer(collection: string, sockets: any): Promise<any>;
 }

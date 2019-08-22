@@ -2,6 +2,8 @@ import {PresenceChannel} from './presence-channel';
 import {PrivateChannel} from './private-channel';
 import {Log} from './../log';
 import {RootChannel} from "./rootChannel";
+import {Database} from "../database";
+import {Logger} from "../log/logger";
 
 export class Channel {
     /**
@@ -32,11 +34,11 @@ export class Channel {
     /**
      * Create a new channel instance.
      */
-    constructor(private io, private options, protected log) {
+    constructor(private io: any, private options: any, protected log: Logger, protected db: Database) {
 
-        this.private = new PrivateChannel(options, this.log);
-        this.rootChannel = new RootChannel(options, this.log);
-        this.presence = new PresenceChannel(io, options, this.log);
+        this.private = new PrivateChannel(this.options, this.log);
+        this.rootChannel = new RootChannel(this.options, this.log);
+        this.presence = new PresenceChannel(this.io, this.options, this.log, this.db);
 
         Log.success('Channels are ready.');
 

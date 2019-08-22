@@ -1,4 +1,5 @@
 import {Log} from "../log";
+import {Logger} from "../log/logger";
 
 let url = require('url');
 const request = require('request');
@@ -22,7 +23,7 @@ export class BaseAuthChannel {
      * @param options
      * @param log
      */
-    constructor(protected options: any, protected log: any) {
+    constructor(protected options: any, protected log: Logger) {
 
         this.request = request;
     }
