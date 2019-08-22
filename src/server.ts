@@ -22,6 +22,9 @@ export class Server {
      */
     public io: any;
 
+    /** express httpServer */
+    protected server: any;
+
     /**
      * Create a new server instance.
      */
@@ -44,6 +47,16 @@ export class Server {
                 resolve(this.io);
             }, error => reject(error));
         });
+    }
+
+    /**
+     * Stop server when in test mode
+     */
+    stop(): Promise<any>{
+        return new Promise((resolve, reject) => {
+            this.server.close();
+            resolve();
+        })
     }
 
     /**
@@ -116,7 +129,7 @@ export class Server {
             var httpServer = http.createServer(this.express);
         }
 
-        httpServer.listen(this.getPort(), this.options.host);
+        this.server = httpServer.listen(this.getPort(), this.options.host);
 
         this.authorizeRequests();
 

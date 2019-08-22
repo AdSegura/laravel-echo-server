@@ -20,19 +20,7 @@ export class CommandChannel {
 
                 Log.success('Close Socket ID: ' + command.data);
 
-                let user = IoUtils.findUser(command.data, this.io);
-
-                if (user.sockets.length === 0) return;
-
-                Log.success('We have a Rogue Sockets to Kill');
-
-                user.sockets.forEach(socketId => {
-                    IoUtils.disconnect(
-                        this.io.sockets.sockets[socketId],
-                        this.log,
-                        'Laravel Close Socket Command'
-                        );
-                });
+                IoUtils.close_all_user_sockets(command.data, this.io, this.log);
 
                 break;
             }

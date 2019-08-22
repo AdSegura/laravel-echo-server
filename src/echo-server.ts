@@ -8,6 +8,7 @@ import {IoUtils} from "./utils/ioUtils";
 const packageFile = require('../package.json');
 import {FsUtils} from "./utils/fsUtils";
 import {CommandChannel} from "./channels/commandChannel";
+import {options} from "./default-options";
 
 const defaultOptions = FsUtils.getConfigfile();
 
@@ -65,6 +66,7 @@ export class EchoServer {
      */
     run(options: any): Promise<any> {
         return new Promise((resolve, reject) => {
+
             this.options = Object.assign(this.defaultOptions, options);
 
             this.log = new Bunyan(this.options);
@@ -81,6 +83,13 @@ export class EchoServer {
                 }, error => Log.error(error));
             }, error => Log.error(error));
         });
+    }
+
+    /**
+     * Stop server when in test mode
+     */
+    stop(): Promise<any>{
+        return this.server.stop()
     }
 
     /**
@@ -198,7 +207,7 @@ export class EchoServer {
      */
     onConnect(): void {
         this.server.io.on('connection', socket => {
-            this.channel.joinRoot(socket)
+            this.channel.joinRoot(socket) //Auth Root Channel '/'
                 .then(auth => {
                     if(auth === false)
                         return IoUtils.disconnect(
@@ -206,6 +215,20 @@ export class EchoServer {
                             this.log,
                             'Laravel Auth Failed for user id:' + auth.channel_data.user_id,
                         );
+
+                    //if multiple_sockets = false
+                    //is user_id connected with other SocketId ?
+                    //if yes disconnect it.
+                    Log.success(`close_all_user_sockets_except_this_socket VALUE ${this.options.multiple_sockets}`);
+                    if(this.options.multiple_sockets == false) {
+                        Log.success(`close_all_user_sockets_except_this_socket ${socket.id}`);
+                        IoUtils.close_all_user_sockets_except_this_socket(
+                            auth.channel_data.user_id,
+                            socket.id,
+                            this.server.io,
+                            this.log
+                        );
+                    }
 
                     //console.log(socket.adapter.nsp.sockets)
                     socket.user_id = auth.channel_data.user_id;

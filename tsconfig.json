@@ -17,7 +17,8 @@
     "src/cli/index.ts",
     "src/test/index.ts",
     "src/test/start.mock.ts",
-    "src/test/auth/index.ts"
+    "src/test/auth/index.ts",
+    "src/test/multiple_sockets/index.ts"
   ],
   "exclude": [
     "node_modules"

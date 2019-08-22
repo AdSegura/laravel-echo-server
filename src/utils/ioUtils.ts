@@ -104,4 +104,54 @@ export class IoUtils {
 
         return socket.handshake.address;
     }
+
+    /**
+     * close_all_user_sockets
+     *
+     * @param user_id
+     * @param io
+     * @param log
+     */
+    static close_all_user_sockets(user_id: number, io: any, log: any): void{
+
+        let user = this.findUser(user_id, io);
+
+        if (user.sockets.length === 0) return;
+
+        Log.success('close_all_user_sockets: We have Rogue Sockets to Kill');
+
+        user.sockets.forEach(socketId => {
+            this.disconnect(
+                io.sockets.sockets[socketId],
+                log,
+                'close_all_user_sockets Laravel Close Socket Command'
+            );
+        });
+    }
+
+    /**
+     * close_all_user_sockets_except_this_socket
+     *
+     * @param user_id
+     * @param socket_id
+     * @param io
+     * @param log
+     */
+    static close_all_user_sockets_except_this_socket(user_id: number, socket_id: string, io: any, log: any): void{
+
+        let user = this.findUser(user_id, io);
+
+        if (user.sockets.length === 0) return;
+
+        Log.success('close_all_user_sockets: We have Rogue Sockets to Kill');
+
+        user.sockets.forEach(socketId => {
+            if(socketId !== socket_id)
+                this.disconnect(
+                    io.sockets.sockets[socketId],
+                    log,
+                    `close_all_user_sockets_except_this_socket ${socket_id} Laravel Close Socket Command`
+                );
+        });
+    }
 }
