@@ -8,7 +8,6 @@ import {IoUtils} from "./utils/ioUtils";
 const packageFile = require('../package.json');
 import {FsUtils} from "./utils/fsUtils";
 import {CommandChannel} from "./channels/commandChannel";
-import {options} from "./default-options";
 
 const defaultOptions = FsUtils.getConfigfile();
 
@@ -16,53 +15,40 @@ const defaultOptions = FsUtils.getConfigfile();
  * Echo server class.
  */
 export class EchoServer {
-    /**
-     * Default server options.
-     */
+
+    /** Default server options. */
     public defaultOptions: any;
 
-    /**
-     * Configurable server options.
-     */
+    /** Configurable server options */
     public options: any;
 
-    /**
-     * Socket.io server instance.
-     */
+    /** Socket.io server instance. */
     private server: Server;
 
-    /**
-     * Channel instance.
-     */
+    /** Channel instance.*/
     private channel: Channel;
 
     /** command channel */
     private commandChannel: CommandChannel;
 
-    /**
-     * Subscribers
-     */
+    /** Subscribers */
     private subscribers: Subscriber[];
 
-    /**
-     * Http api instance.
-     */
+    /** Http api instance. */
     private httpApi: HttpApi;
 
-    /**
-     * Log to syslog
-     */
+    /** Log to syslog */
     protected log: any;
 
-    /**
-     * Create a new instance.
-     */
+    /** Create a new instance. */
     constructor() {
         this.defaultOptions = defaultOptions;
     }
 
     /**
      * Start the Echo Server.
+     *
+     * @return promise
      */
     run(options: any): Promise<any> {
         return new Promise((resolve, reject) => {
@@ -87,6 +73,8 @@ export class EchoServer {
 
     /**
      * Stop server when in test mode
+     *
+     * @return promise
      */
     stop(): Promise<any>{
         return this.server.stop()
@@ -94,6 +82,8 @@ export class EchoServer {
 
     /**
      * Initialize the class
+     *
+     * @return promise
      */
     init(io: any): Promise<any> {
         return new Promise((resolve, reject) => {
@@ -118,7 +108,7 @@ export class EchoServer {
      * Text shown at startup.
      */
     startup(): void {
-        Log.title(`\nL A R A V E L  E C H O  S E R V E R\n`);
+        Log.title(`\nL A R A V E L  E C H O  S E R V E R  C L U S T E R\n`);
         Log.info(`version ${packageFile.version}\n`);
 
         Log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`, true);
@@ -128,6 +118,8 @@ export class EchoServer {
 
     /**
      * Listen for incoming event from subscibers.
+     *
+     * @return promise
      */
     listen(): Promise<any> {
         return new Promise((resolve, reject) => {
@@ -204,6 +196,7 @@ export class EchoServer {
 
     /**
      * On server connection.
+     * { channel_data: { user_id: 1, user_info: 1 } }
      */
     onConnect(): void {
         this.server.io.on('connection', socket => {
@@ -216,10 +209,12 @@ export class EchoServer {
                             'Laravel Auth Failed for user id:' + auth.channel_data.user_id,
                         );
 
-                    //if multiple_sockets = false
-                    //is user_id connected with other SocketId ?
-                    //if yes disconnect it.
-                    Log.success(`close_all_user_sockets_except_this_socket VALUE ${this.options.multiple_sockets}`);
+                    //console.log(socket.adapter.nsp.sockets)
+                    socket.user_id = auth.channel_data.user_id;
+
+                    Log.success(`LOG Success on Server: ${this.server.getServerId()}`);
+                    //IoUtils.setActiveUserOnServer(this.server.getServerId(), auth.channel_data.user_id)
+
                     if(this.options.multiple_sockets == false) {
                         Log.success(`close_all_user_sockets_except_this_socket ${socket.id}`);
                         IoUtils.close_all_user_sockets_except_this_socket(
@@ -229,9 +224,6 @@ export class EchoServer {
                             this.log
                         );
                     }
-
-                    //console.log(socket.adapter.nsp.sockets)
-                    socket.user_id = auth.channel_data.user_id;
 
                     const ip = IoUtils.getIp(socket, this.options);
 

@@ -14,6 +14,11 @@
 * close user's sockets from Laravel
 * kickOff users from channels
 
+### We can start Echo Server with custom ENV port
+```sh
+$> npm run build && ECHO_PORT=3000 bin/server.js start
+```
+
 ### new Options Added and Deleted on Cluster Mode
 
 No longer support for Sqlite and Redis to store presence channel info.

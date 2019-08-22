@@ -6,6 +6,7 @@ var url = require('url');
 var io = require('socket.io');
 const redisAdapter = require('socket.io-redis');
 import { Log } from './log';
+const os = require("os");
 
 export class Server {
     /**
@@ -25,11 +26,14 @@ export class Server {
     /** express httpServer */
     protected server: any;
 
+    /** id representing server instance */
+    protected server_id: any; //port 4001 host foo.bar -> foobar_4001
+
     /**
      * Create a new server instance.
      */
     constructor(private options, protected log) {
-
+        this.server_id = this.generateServerId();
     }
 
     /**
@@ -57,6 +61,27 @@ export class Server {
             this.server.close();
             resolve();
         })
+    }
+
+    /**
+     * Generate Server Id
+     *
+     * @return string hostname_port
+     */
+    generateServerId(): string{
+        const hostname = os.hostname();
+        const port = this.getPort();
+
+        return `${hostname}_${port}`
+    }
+
+    /**
+     * get Server Id
+     *
+     * @return string hostname_port
+     */
+    getServerId(): string {
+        return this.server_id;
     }
 
     /**

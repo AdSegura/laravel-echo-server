@@ -312,6 +312,9 @@ export class Cli {
                 process.on('SIGHUP', process.exit);
                 process.on('SIGTERM', process.exit);
 
+                if(process.env.ECHO_PORT)
+                    options.port = process.env.ECHO_PORT;
+
                 echo.run(options);
 
             });
