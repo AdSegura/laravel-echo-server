@@ -1,10 +1,10 @@
-# Laravel Echo Server Fork 
+# Laravel Echo Server Cluster Mode
 
-## Cluster Mode
-
-#### Laravel Echo 1.5.7 Adseg Culter Mode New Features:
+#### Laravel Echo [1.5.7] fork Adsegura Cluster Mode New Features:
+###### not for production!
 
 * Cluster Mode with socket.io-redis adapter
+* MongoDb to Store members, server_id on Connect 
 * MongoDb to Store presence channel members
 * Auth user on connect event (closing socket if fails to)
 * JWT Cookie Auth
@@ -23,7 +23,8 @@ $> npm run build && ECHO_PORT=3000 bin/server.js start
 
 No longer support for Sqlite and Redis to store presence channel info.
 
-MongoDb is the database responsible to store presence channels members.
+* MongoDb is the database responsible to store presence channels members.
+* MongoDb is the database responsible to store member, server_id data on Connect.
 
 ```json
 {
