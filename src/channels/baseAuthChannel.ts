@@ -65,6 +65,8 @@ export class BaseAuthChannel {
 
     /**
      * Send a request to the server.
+     *
+     * { channel_data: { user_id: 2, user_info: 2 } }
      */
     protected serverRequest(socket: any, options: any): Promise<any> {
         return new Promise<any>((resolve, reject) => {
@@ -94,14 +96,20 @@ export class BaseAuthChannel {
                     });
 
                 } else {
-                    Log.info(`[${new Date().toLocaleTimeString()}] - ${socket.id} authenticated for: ${options.form.channel_name}`);
-                    this.log.info(`${socket.id} authenticated for: ${options.form.channel_name}`);
-
                     try {
                         body = JSON.parse(response.body);
                     } catch (e) {
                         body = response.body
                     }
+
+                    const msg = [
+                        `Auth: user:${body.channel_data.user_id},`,
+                        `socket_id:${socket.id},`,
+                        `channel:${options.form.channel_name}`
+                       ].join(' ');
+
+                    Log.info(`[${new Date().toLocaleTimeString()}] - ` + msg);
+                    this.log.info(msg);
 
                     resolve(body);
                 }

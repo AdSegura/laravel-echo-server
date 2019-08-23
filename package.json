@@ -20,7 +20,7 @@
     "build": "tsc",
     "dev": "tsc -w",
     "prepublish": "npm run build",
-    "test": "node_modules/.bin/_mocha --exit dist/test/auth/index.js"
+    "test": "node_modules/.bin/_mocha --exit dist/test/auth/index.js && node_modules/.bin/_mocha --exit dist/test/multiple_sockets/index.js"
   },
   "dependencies": {
     "bunyan": "^1.8.12",

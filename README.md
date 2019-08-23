@@ -107,6 +107,30 @@ If Echo is behind a proxy will get the client's Ip from X-forward headers.
 * true
 * false
 
+## Tests 
+```sh
+$> npm run build && npm run test
+
+Laravel Echo Auth Methods
+    ✓ should Fail Authenticate with Bearer Token Header and should be disconnected (98ms)
+    ✓ should Authenticate Correctly with Bearer Token Header
+    ✓ should Fail Authenticate with Query Token
+    ✓ should Authenticate Correctly with Query Token
+    ✓ should Fail Authenticate with Cookie Token
+    ✓ should Authenticate Correctly with Cookie Token
+
+  6 passing (280ms)
+
+  Laravel Echo Multiple Sockets not Allowed
+    ✓ Second Connection to Echo Server is not allowed with multiple_sockets = false (3024ms)
+
+  Laravel Echo Multiple Sockets Allowed
+    ✓ Second Connection to Echo Server is allowed with multiple_sockets = true (3011ms)
+
+  2 passing (6s)
+```
+
+
 # Laravel backend 
 ##### routes/channels.php
 ```php
@@ -216,11 +240,6 @@ template(name="bunyan" type="string"
 ##### Now you can use bunyan to parse logs 
 ```sh
 node_modules/bunyan/bin/bunyan /var/log/myapp.log
-```
-
-## Tests 
-```sh
-$> npm run build && npm run test
 ```
 
 ### Laravel Echo Auth and Message Flow

@@ -211,21 +211,32 @@ export class EchoServer {
         this.server.io.on('connection', socket => {
             this.channel.joinRoot(socket) //Auth Root Channel '/'
                 .then(auth => {
-                    if(auth === false)
-                        return IoUtils.disconnect(
-                            socket,
-                            this.log,
-                            'Laravel Auth Failed for user id:' + auth.channel_data.user_id,
-                        );
+                    if(auth === false) {
+                        const msg = `Auth: Failed for user:${auth.channel_data.user_id}, channel:root`;
+                        return IoUtils.disconnect(socket, this.log, msg);
+                    }
 
-                    //console.log(socket.adapter.nsp.sockets)
+                    if(! auth.hasOwnProperty('channel_data') ){
+                        let msg_err = 'Error: on Connect Echo-Server response';
+                        msg_err += ' do not have channel_data property';
+                        this.log.error(msg_err);
+                        Log.error(msg_err);
+
+                        return IoUtils.disconnect(socket, this.log, msg_err);
+                    } else if(! auth.channel_data.hasOwnProperty('user_id') ){
+                        let msg_err = 'Error: on Connect Echo-Server response';
+                        msg_err += ' do not have channel_data.user_id property';
+                        this.log.error(msg_err);
+                        Log.error(msg_err);
+
+                        return IoUtils.disconnect(socket, this.log, msg_err);
+                    }
+
                     socket.user_id = auth.channel_data.user_id;
                     const ip = IoUtils.getIp(socket, this.options);
 
                     Log.success(`LOG Success on Server: ${this.server.getServerId()}`);
-                    //IoUtils.setActiveUserOnServer(this.server.getServerId(),
-                    // {user_id: auth.channel_data.user_id, socket_id: socket.id})
-                    // collection echo_users, {user_id:1, socket_id:2ff, server_id: foo1 })
+
                     this.db.setUserInServer('echo_users', {
                         user_id: auth.channel_data.user_id,
                         socket_id: socket.id,
@@ -250,17 +261,24 @@ export class EchoServer {
                         IoUtils.getAllActiveSocketsInThisIoServer(this.server.io)
                     );
 
-                    Log.success(`AUTH Success ON NSP / User Id:${socket.user_id} SocketID: ${socket.id} with IP:${ip}`);
-                    this.log.info(`Auth Success ON NSP / User Id:${socket.user_id} with Socket:${socket.id} with IP:${ip}`);
+                    const msg_sucess = [
+                        `Auth Success ON NSP /`,
+                        `User Id:${socket.user_id}`,
+                        `with Socket:${socket.id} with IP:${ip}`
+                    ].join(' ');
+
+                    Log.success(msg_sucess);
+                    this.log.info(msg_sucess);
+
                     return this.startSubscribers(socket);
 
                 })
                 .catch(e => {
-                    Log.error(`Socket:${socket.id} join Root Auth Error, reason:${e.reason}`);
-                    this.log
-                        .error(`Socket:${socket.id} join Root Auth Error, reason:${e.reason}`);
+                    const msg_error = `Auth: Socket:${socket.id} join Root Auth Error, reason:${e.reason}`
+                    Log.error(msg_error);
+                    this.log.error(msg_error);
 
-                    IoUtils.disconnect(socket, this.log, e.reason)
+                    IoUtils.disconnect(socket, this.log, msg_error)
                 })
         });
     }
