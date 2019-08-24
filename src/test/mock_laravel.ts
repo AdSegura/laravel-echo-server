@@ -9,7 +9,12 @@ const channels = [
     "private"
 ];
 
-const users = {1:1,2:2,3:3};
+//{"user_id":2,"user_info":{"id":2,"name":"luser","roomId":"1"}}
+const users = {
+    1:{"user_id":1,"user_info":{"id":1,"name":"superman","roomId":"1"}},
+    2:{"user_id":2,"user_info":{"id":2,"name":"luser","roomId":"1"}},
+    3:{"user_id":3,"user_info":{"id":3,"name":"JohnDoe","roomId":"1"}},
+};
 
 /**
  * Mock Laravel Broadcasting Auth Api
@@ -106,7 +111,7 @@ export class MockLaravel {
                 break;
             }
 
-            case 'presence': {
+            case channel.match(/^presence-.*$/).input: {
                 this.authorizePresence(channel, user_id, auth => {
                     if(auth === false) return this.response401(req, res);
                     res.json(auth);
@@ -114,7 +119,7 @@ export class MockLaravel {
                 break;
             }
 
-            case 'private': {
+            case channel.match(/^private-.*$/).input: {
                 this.authorizePrivate(channel, user_id, auth => {
                     if(auth === false) return this.response401(req, res);
                     res.json(auth);
@@ -123,7 +128,7 @@ export class MockLaravel {
             }
 
             default: {
-                this.badResponse(req, res, 'unknown channel')
+                this.badResponse(req, res, `unknown channel ${channel}`)
             }
         }
     }
@@ -138,7 +143,7 @@ export class MockLaravel {
     authorizeRoot(channel: string, user_id: number, cb: any): any {
 
         if(this.users[user_id])
-            return cb({"channel_data":{"user_id":user_id,"user_info":{"id":user_id}}});
+            return cb({"channel_data":this.users[user_id]});
 
         return cb(false);
     }
@@ -152,7 +157,7 @@ export class MockLaravel {
      */
     authorizePresence(channel: string, user_id: number, cb: any): any {
         if(this.users[user_id])
-            return cb({"channel_data":{"user_id":user_id,"user_info":{"id":user_id}}});
+            return cb({"channel_data":this.users[user_id]});
 
         return cb(false);
     }

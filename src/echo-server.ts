@@ -3,7 +3,6 @@ import {Channel} from './channels';
 import {Server} from './server';
 import {HttpApi} from './api';
 import {Log} from './log';
-import {Bunyan} from "./log/bunyan";
 import {IoUtils} from "./utils/ioUtils";
 const packageFile = require('../package.json');
 import {FsUtils} from "./utils/fsUtils";
@@ -56,22 +55,19 @@ export class EchoServer {
      * @return promise
      */
     run(options: any): Promise<any> {
+
+        this.options = Object.assign(this.defaultOptions, options);
+
+        this.log = new Logger(this.options);
+        this.db = new Database(this.options, this.log);
+        this.server = new Server(this.options, this.log);
+        this.log.setServerId(this.server.getServerId());
+
         return new Promise((resolve, reject) => {
-
-            this.options = Object.assign(this.defaultOptions, options);
-
-            this.log = new Logger(this.options);
-
             this.startup();
-
-            this.db = new Database(this.options, this.log);
-            this.server = new Server(this.options, this.log);
-
-
             this.server.init().then(io => {
                 this.init(io).then(() => {
-                    Log.info('\nServer ready!\n');
-                    this.log.info('Server ready!');
+                    this.log.info(`Starting server ${this.server.getServerId()} in ${this.options.devMode ? 'DEV' : 'PROD'} mode`);
                     resolve(this);
                 }, error => Log.error(error));
             }, error => Log.error(error));
@@ -122,7 +118,6 @@ export class EchoServer {
         Log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`, true);
         Log.success(`Log Mode is ${this.options.log} mode`, true);
 
-        this.log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`)
     }
 
     /**
@@ -263,7 +258,8 @@ export class EchoServer {
 
                     const msg_sucess = [
                         `Auth Success ON NSP /`,
-                        `User Id:${socket.user_id}`,
+                        `server_id:${this.server.getServerId()}`,
+                        `user_id:${socket.user_id}`,
                         `with Socket:${socket.id} with IP:${ip}`
                     ].join(' ');
 

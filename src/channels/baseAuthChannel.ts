@@ -37,7 +37,7 @@ export class BaseAuthChannel {
 
         Log.info(`[${new Date().toLocaleTimeString()}] - Sending auth request to: ${options.url} channel:${options.form.channel_name}\n`);
 
-        this.log.info(`Sending auth request to: ${options.url} channel_request:${options.form.channel_name}`);
+        //this.log.info(`Sending auth request to: ${options.url} channel_request:${options.form.channel_name}`);
 
         return this.serverRequest(socket, options);
     }
@@ -103,7 +103,7 @@ export class BaseAuthChannel {
                     }
 
                     const msg = [
-                        `Auth: user:${body.channel_data.user_id},`,
+                        `Auth: user_id:${body.channel_data.user_id},`,
                         `socket_id:${socket.id},`,
                         `channel:${options.form.channel_name}`
                        ].join(' ');

@@ -45,7 +45,7 @@ export const options = {
     },
     "multiple_sockets": true,
     "command_channel": "private-echo.server.commands",
-    "log": "file",
+    "log": "syslog",
     "log_folder": "../../logs/",
     "syslog": {
         "host": "127.0.0.1",

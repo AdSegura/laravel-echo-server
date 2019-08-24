@@ -25,20 +25,7 @@ export class Bunyan implements Log_interface {
      */
     constructor(private options: any) {
 
-        switch (this.options.log) {
-            case 'file': {
-                this._path = path.resolve(__dirname, this.options.log_folder);
-                this._log = this.fileLogger();
-                break;
-            }
-            case 'syslog': {
-                this._log = this.sysLogger();
-                break;
-            }
-            default: {
-                console.error('No logger defined')
-            }
-        }
+        this._log = this.sysLogger();
     }
 
     /**

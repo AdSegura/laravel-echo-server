@@ -1,5 +1,6 @@
 import { DatabaseDriver } from './database-driver';
 import {Log} from "../log";
+import {Logger} from "../log/logger";
 const MongoClient = require('mongodb').MongoClient;
 
 export class MongoDatabase implements DatabaseDriver {
@@ -13,7 +14,7 @@ export class MongoDatabase implements DatabaseDriver {
     /**
      * Create a new cache instance.
      */
-    constructor(private options: any, protected log: any) {
+    constructor(private options: any, protected log: Logger) {
 
         this._mongo = new MongoClient(this.url(), {
                 useNewUrlParser: true,
@@ -98,7 +99,10 @@ export class MongoDatabase implements DatabaseDriver {
     }
 
     /**
-     * Retrieve data from redis.
+     * Is Member on Channel
+     *
+     * @param channel
+     * @param member
      */
     isMember(channel: string, member: any): Promise<any> {
         Log.success(`MONGO IS_Member on Channel: ${channel}, Member: ${JSON.stringify(member)}`);
@@ -110,7 +114,7 @@ export class MongoDatabase implements DatabaseDriver {
                     Log.error(msg);
                     return reject(err)
                 }
-                return resolve(res)
+                return resolve(res[0])
             });
         });
     }

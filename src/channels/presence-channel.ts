@@ -26,9 +26,8 @@ export class PresenceChannel {
     isMember(channel: string, member: any): Promise<boolean> {
         Log.success(`Is Member channel: ${channel}, member ${JSON.stringify(member)}`);
         return new Promise((resolve, reject) => {
-            this.db.isMember(channel, member).then(member => {
-                Log.success(`Is member Mongo Response: ${JSON.stringify(member)}`);
-                if(member) return resolve (true);
+            this.db.isMember(channel, member).then(res => {
+                if(res) return resolve (true);
                 return resolve(false);
             }).catch(e => reject(e))
         });
@@ -115,6 +114,8 @@ export class PresenceChannel {
      */
     onJoin(socket: any, channel: string, member: any): void {
         Log.success(`On JOIN, SocketId:${socket.id}, channel:${channel}, MEMBER: ${JSON.stringify(member)}`)
+        //console.error(this.io.sockets)
+        if(! this.io.sockets.connected[socket.id]) return;
         this.io
             .sockets
             .connected[socket.id]

@@ -15,10 +15,14 @@
   "files": [
     "src/index.ts",
     "src/cli/index.ts",
-    "src/test/index.ts",
+    "src/test/mock_laravel.ts",
+    "src/test/echoServerFactory.ts",
+    "src/test/echoClientFactory.ts",
     "src/test/start.mock.ts",
     "src/test/auth/index.ts",
-    "src/test/multiple_sockets/index.ts"
+    "src/test/multiple_sockets/index.ts",
+    "src/test/presence_channel/cluster.ts",
+    "src/test/presence_channel/presence.ts"
   ],
   "exclude": [
     "node_modules"

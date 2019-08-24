@@ -4,17 +4,23 @@ const fs = require('fs');
 const path = require('path');
 const colors = require("colors");
 const echo = require('./../../dist');
+import {EchoServer} from "../echo-server";
 const inquirer = require('inquirer');
 const crypto = require('crypto');
 
-import ErrnoException = NodeJS.ErrnoException;
-import {MockLaravel} from "../test";
-import {FsUtils} from "../utils/fsUtils";
 
 /**
  * Laravel Echo Server CLI
  */
 export class Cli {
+
+    /** server tcp port */
+    protected port: number;
+
+    protected options: any;
+
+    protected lockFile: any;
+
     /**
      * Create new CLI instance.
      */
@@ -249,6 +255,11 @@ export class Cli {
             dev: {
                 type: 'boolean',
                 describe: 'Run in dev mode.',
+            },
+
+            port: {
+                type: 'number',
+                describe: 'TCP Port',
             }
         });
 
@@ -265,7 +276,13 @@ export class Cli {
 
             options.devMode = `${(yargs.argv.dev || options.devMode || false)}` === 'true';
 
-            const lockFile = path.join(path.dirname(configFile), path.basename(configFile, '.json') + '.lock');
+
+            options.port = yargs.argv.port ? yargs.argv.port : options.port;
+
+            this.port = options.port;
+
+            let lockFile = path.join(path.dirname(configFile), path.basename(configFile, '.json') + `_${options.port}.lock`);
+
 
             if (fs.existsSync(lockFile)) {
                 let lockProcess;
@@ -312,14 +329,60 @@ export class Cli {
                 process.on('SIGHUP', process.exit);
                 process.on('SIGTERM', process.exit);
 
-                if(process.env.ECHO_PORT)
-                    options.port = process.env.ECHO_PORT;
-
-                echo.run(options);
+                echo.run(options)
 
             });
         });
     }
+
+    startServer(options: any): Promise<any>{
+        options = Object.assign(this.defaultOptions, options);
+
+        if(options.testMode) options.authHost = `http://localhost:${options.dev.mock.laravel_port}`;
+        this.lockFile = path.resolve(__dirname, `../../laravel-echo-server_${options.port}.lock`);
+
+        const echo_server = new EchoServer()
+
+        return new Promise((resolve, reject) => {
+
+            return echo_server.run(options).then(() => {
+                return resolve(this)
+            }).catch(e => {
+                return reject(e)
+            })
+        })
+    }
+    /**
+     * Stop the Laravel Echo server.
+     */
+    stopServer(): void {
+
+        if (fs.existsSync(this.lockFile)) {
+            let lockProcess;
+
+            try {
+                lockProcess = parseInt(JSON.parse(fs.readFileSync(this.lockFile, 'utf8')).process);
+            } catch {
+                console.error(colors.error('Error: There was a problem reading the lock file.'));
+            }
+
+            if (lockProcess) {
+                try {
+                    fs.unlinkSync(this.lockFile);
+
+                    process.kill(lockProcess);
+
+                    //console.log(colors.green('Closed the running server.'));
+                } catch (e) {
+                    console.error(e);
+                    console.log(colors.error('No running servers to close.'));
+                }
+            }
+        } else {
+            //console.log(colors.error('Error: Could not find any lock file.'));
+        }
+    }
+
 
     /**
      * Stop the Laravel Echo server.
@@ -338,7 +401,9 @@ export class Cli {
         });
 
         const configFile = this.getConfigFile(yargs.argv.config, yargs.argv.dir);
-        const lockFile = path.join(path.dirname(configFile), path.basename(configFile, '.json') + '.lock');
+
+        let lockFile = path.join(path.dirname(configFile), path.basename(configFile, '.json') + `_${this.port}.lock`);
+
 
         if (fs.existsSync(lockFile)) {
             let lockProcess;
