@@ -1,6 +1,5 @@
 import {PresenceChannel} from './presence-channel';
 import {PrivateChannel} from './private-channel';
-import {Log} from './../log';
 import {RootChannel} from "./rootChannel";
 import {Database} from "../database";
 import {Logger} from "../log/logger";
@@ -30,17 +29,20 @@ export class Channel {
      * Root NSP /
      */
     rootChannel: RootChannel;
+    private debug: any;
 
     /**
      * Create a new channel instance.
      */
     constructor(private io: any, private options: any, protected log: Logger, protected db: Database) {
 
+        this.debug = require('debug')(`server_${this.options.port}:channel`);
+
         this.private = new PrivateChannel(this.options, this.log);
         this.rootChannel = new RootChannel(this.options, this.log);
         this.presence = new PresenceChannel(this.io, this.options, this.log, this.db);
 
-        Log.success('Channels are ready.');
+        this.debug('Channels are ready.');
 
     }
 
@@ -85,7 +87,7 @@ export class Channel {
             socket.leave(channel);
 
 
-            Log.info(`[${new Date().toLocaleTimeString()}] - ${socket.id} left channel: ${channel} (${reason})`);
+            this.debug(`[${new Date().toLocaleTimeString()}] - ${socket.id} left channel: ${channel} (${reason})`);
 
         }
     }
@@ -125,7 +127,7 @@ export class Channel {
 
             if (this.isPresence(data.channel)) {
 
-                Log.success('Join Private Is Presence Channel: ' + data.channel);
+                this.debug('Join Private Is Presence Channel: ' + data.channel);
 
                 let member = res.channel_data;
 
@@ -135,7 +137,7 @@ export class Channel {
             this.onJoin(socket, data.channel);
 
         }, error => {
-            Log.error(error.reason);
+            this.debug(error.reason);
             this.io.sockets.to(socket.id)
                 .emit('subscription_error', data.channel, error.status);
         });
@@ -153,7 +155,7 @@ export class Channel {
      */
     onJoin(socket: any, channel: string): void {
 
-        Log.info(`[${new Date().toLocaleTimeString()}] - ${socket.id} joined channel: ${channel}`);
+        this.debug(`[${new Date().toLocaleTimeString()}] - ${socket.id} joined channel: ${channel}`);
 
     }
 

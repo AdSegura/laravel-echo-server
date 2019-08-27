@@ -1,5 +1,4 @@
 var Redis = require('ioredis');
-import { Log } from './../log';
 import { Subscriber } from './subscriber';
 
 export class RedisSubscriber implements Subscriber {
@@ -9,6 +8,7 @@ export class RedisSubscriber implements Subscriber {
      * @type {object}
      */
     private _redis: any;
+    private debug: any;
 
     /**
      * Create a new instance of subscriber.
@@ -17,6 +17,7 @@ export class RedisSubscriber implements Subscriber {
      * @param log
      */
     constructor(private options, protected log: any) {
+        this.debug = require('debug')(`server_${this.options.port}:redis-subscriber`);
         this._redis = new Redis(options.databaseConfig.redis);
     }
 
@@ -32,16 +33,16 @@ export class RedisSubscriber implements Subscriber {
                 try {
                     message = JSON.parse(message);
 
-                    Log.info("Channel: " + channel);
-                    Log.info("Event: " + message.event);
+                    this.debug("Channel: " + channel);
+                    this.debug("Event: " + message.event);
 
                     callback(channel, message);
 
                 } catch (e) {
                     this.log.error("Redis Subscriber on pmessage No JSON message " + JSON.stringify(message));
 
-                    Log.warning(e);
-                    Log.warning("No JSON message " + JSON.stringify(message));
+                    this.debug(e);
+                    this.debug("No JSON message " + JSON.stringify(message));
 
                 }
             });
@@ -50,7 +51,7 @@ export class RedisSubscriber implements Subscriber {
                 if (err) {
                     reject('Redis could not subscribe.')
                 }
-                Log.success('Listening for redis events...');
+                this.debug('Listening for redis events...');
                 resolve();
             });
         });

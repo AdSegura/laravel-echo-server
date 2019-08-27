@@ -1,15 +1,13 @@
 import {describe, before, after, it} from "mocha";
 import {expect} from "chai";
 import {MockLaravel} from "../mock_laravel";
-import {EchoServerFactory} from "../echoServerFactory";
+import {EchoServerFactory} from "../../echoServerFactory";
 import {EchoClientFactory} from "../echoClientFactory";
-const echo = require('../../index');
+import {options} from '../../default-options';
 
 describe('Presence Channel Tests Cluster Mode', function () {
     let echo_server;
     let echo_server1;
-
-    const options = echo.defaultOptions;
 
     const port = 2222;
     const port1 = 1111;
@@ -17,19 +15,18 @@ describe('Presence Channel Tests Cluster Mode', function () {
     const ioUrl = `${options.protocol}://${options.host}:${port}`;
     const ioUrl1 = `${options.protocol}://${options.host}:${port1}`;
 
+    const authHost = `http://localhost:${options.dev.mock.laravel_port}`;
+
     const mockLaravel = new MockLaravel(options);
 
     /** setup echo server and mock Laravel Server*/
     before(function (done) {
-        let E1 = new EchoServerFactory(port, {console_log: false, log: "syslog"});
-        E1.start()
+        EchoServerFactory.start(port, {authHost})
             .then(server => {
                 echo_server = server;
-
             });
 
-        let E2 = new EchoServerFactory(port1, {console_log: false, log: "syslog"});
-        E2.start().then(server1 => {
+        EchoServerFactory.start(port1, {authHost}).then(server1 => {
             echo_server1 = server1;
             mockLaravel.run().then(() => {
                 return done();
@@ -41,8 +38,8 @@ describe('Presence Channel Tests Cluster Mode', function () {
     /** stop mock Laravel Server*/
     after(function (done) {
         mockLaravel.stop();
-        echo_server.stopServer();
-        echo_server1.stopServer();
+        echo_server.stop();
+        echo_server1.stop();
         return done();
     });
 

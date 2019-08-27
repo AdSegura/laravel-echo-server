@@ -56,8 +56,24 @@ export const options = {
     "dev": {
         "mock": {
             "laravel_port": 7718
-        }
+        },
+        "cluster": {
+            "adapter": {
+                "redis": {
+                    "port": "6379",
+                    "host": "redis.test"
+                }
+            }
+        },
+        "databaseConfig": {
+            "mongo": {
+                "host": "127.0.0.1",
+                "port": "27017",
+                "dbName": "echo_test",
+                "user": null,
+                "password": null
+            }
+        },
     },
-    "console_log": true,
     "behind_proxy": false
 };

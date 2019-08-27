@@ -1,13 +1,10 @@
 import {Logger} from "./log/logger";
-
-var fs = require('fs');
-var http = require('http');
-var https = require('https');
-var express = require('express');
-var url = require('url');
-var io = require('socket.io');
+const http = require('http');
+const express = require('express');
+const url = require('url');
+const io = require('socket.io');
 const redisAdapter = require('socket.io-redis');
-import { Log } from './log';
+import {ServerId} from "./utils/getserverId";
 const os = require("os");
 
 export class Server {
@@ -29,13 +26,17 @@ export class Server {
     protected server: any;
 
     /** id representing server instance */
-    protected server_id: any; //port 4001 host foo.bar -> foobar_4001
+    protected server_id: any;
+
+    /** debug */
+    private debug: any;
 
     /**
      * Create a new server instance.
      */
     constructor(private options: any, protected log: Logger) {
-        this.server_id = this.generateServerId();
+        this.server_id = ServerId.get(this.options);
+        this.debug = require('debug')(`server_${this.options.port}:server`);
     }
 
     /**
@@ -45,56 +46,14 @@ export class Server {
      */
     init(): Promise<any> {
         return new Promise((resolve, reject) => {
-            this.serverProtocol().then(() => {
-                let host = this.options.host || 'localhost';
-                Log.success(`Running at ${host} on port ${this.getPort()}`);
-                this.log.info(`Running at ${host} on port ${this.getPort()}`);
+            this.httpServer().then(instance => {
+
+                this.debug(`Server: ${this.server_id} Running at ${this.options.host} on port ${this.options.port}`);
+                this.log.info(`Server: ${this.server_id} Running at ${this.options.host} on port ${this.options.port}`);
 
                 resolve(this.io);
             }, error => reject(error));
         });
-    }
-
-    /**
-     * Stop server when in test mode
-     */
-    stop(): Promise<any>{
-        return new Promise((resolve, reject) => {
-            this.server.close();
-            resolve();
-        })
-    }
-
-    /**
-     * Generate Server Id
-     *
-     * @return string hostname_port
-     */
-    generateServerId(): string{
-        const hostname = os.hostname();
-        const port = this.getPort();
-
-        return `${hostname}_${port}`
-    }
-
-    /**
-     * get Server Id
-     *
-     * @return string hostname_port
-     */
-    getServerId(): string {
-        return this.server_id;
-    }
-
-    /**
-     * Sanitize the port number from any extra characters
-     *
-     * @return {number}
-     */
-    getPort() {
-        let portRegex = /([0-9]{2,5})[\/]?$/;
-        let portToUse = String(this.options.port).match(portRegex); // index 1 contains the cleaned port number only
-        return Number(portToUse[1]);
     }
 
     /**
@@ -103,67 +62,39 @@ export class Server {
      * @return {Promise<any>}
      */
     serverProtocol(): Promise<any> {
-        return new Promise((resolve, reject) => {
-            if (this.options.protocol == 'https') {
-                this.secure().then(() => {
-                    resolve(this.httpServer(true));
-                }, error => reject(error));
-            } else {
-                resolve(this.httpServer(false));
-            }
-        });
+        return this.httpServer()
     }
 
-    /**
-     * Load SSL 'key' & 'cert' files if https is enabled.
-     *
-     * @return {void}
-     */
-    secure(): Promise<any> {
-        return new Promise((resolve, reject) => {
-            if (!this.options.sslCertPath || !this.options.sslKeyPath) {
-                reject('SSL paths are missing in server config.');
-            }
-
-            Object.assign(this.options, {
-                cert: fs.readFileSync(this.options.sslCertPath),
-                key: fs.readFileSync(this.options.sslKeyPath),
-                ca: (this.options.sslCertChainPath) ? fs.readFileSync(this.options.sslCertChainPath) : '',
-                passphrase: this.options.sslPassphrase,
-            });
-
-            resolve(this.options);
-        });
-    }
 
     /**
      * Create a socket.io server.
      *
-     * @return {any}
+     *
      */
-    httpServer(secure: boolean) {
-        this.express = express();
-        this.express.use((req, res, next) => {
-            for(var header in this.options.headers) {
-                res.setHeader(header, this.options.headers[header]);
+    httpServer(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.express = express();
+            this.express.use((req, res, next) => {
+                for (var header in this.options.headers) {
+                    res.setHeader(header, this.options.headers[header]);
+                }
+                next();
+            });
+
+            const httpServer = http.createServer(this.express);
+
+            this.authorizeRequests();
+
+            this.io = io(httpServer, this.options.socketio);
+            this.io.adapter(redisAdapter(this.options.cluster.adapter.redis));
+
+            function cb() {
+                return resolve.call(this, this)
             }
-            next();
-        });
 
-        if (secure) {
-            var httpServer = https.createServer(this.options, this.express);
-        } else {
-            var httpServer = http.createServer(this.express);
-        }
+            this.server = httpServer.listen(this.getPort(), this.options.host, () =>  cb.call(this));
+        })
 
-        this.server = httpServer.listen(this.getPort(), this.options.host);
-
-        this.authorizeRequests();
-
-        this.io = io(httpServer, this.options.socketio);
-        this.io.adapter(redisAdapter(this.options.cluster.adapter.redis));
-
-        return this.io;
     }
 
     /**
@@ -174,7 +105,6 @@ export class Server {
             if (!this.canAccess(req)) {
                 return this.unauthorizedResponse(req, res);
             }
-
             next();
         });
     }
@@ -244,8 +174,52 @@ export class Server {
      */
     unauthorizedResponse(req: any, res: any): boolean {
         res.statusCode = 403;
-        res.json({ error: 'Unauthorized' });
+        res.json({error: 'Unauthorized'});
 
         return false;
     }
+
+    /**
+     * Stop server when in test mode
+     */
+    stop(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.server.close();
+            resolve();
+        })
+    }
+
+    /**
+     * Generate Server Id
+     *
+     * @return string hostname_port
+     */
+    generateServerId(): string {
+        const hostname = os.hostname();
+        const port = this.getPort();
+
+        return `${hostname}_${port}`
+    }
+
+    /**
+     * get Server Id
+     *
+     * @return string hostname_port
+     */
+    getServerId(): string {
+        return this.server_id;
+    }
+
+
+    /**
+     * Sanitize the port number from any extra characters
+     *
+     * @return {number}
+     */
+    getPort() {
+        let portRegex = /([0-9]{2,5})[\/]?$/;
+        let portToUse = String(this.options.port).match(portRegex); // index 1 contains the cleaned port number only
+        return Number(portToUse[1]);
+    }
+
 }

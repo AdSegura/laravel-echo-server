@@ -1,17 +1,19 @@
 import { DatabaseDriver } from './database-driver';
-import {Log} from "../log";
 var Redis = require('ioredis');
 
 export class RedisDatabase implements DatabaseDriver {
+
     /**
      * Redis client.
      */
     private _redis: any;
+    private debug: any;
 
     /**
      * Create a new cache instance.
      */
     constructor(private options) {
+        this.debug = require('debug')(`server_${this.options.port}:redis`);
         this._redis = new Redis(options.databaseConfig.redis);
     }
 
@@ -43,7 +45,7 @@ export class RedisDatabase implements DatabaseDriver {
      * Store data to cache.
      */
     setMember(key: string, value: any): void {
-        Log.success(`REDIS SetMember on Channel: ${key}, Members: ${JSON.stringify(value)}`)
+        this.debug(`REDIS SetMember on Channel: ${key}, Members: ${JSON.stringify(value)}`)
         this._redis.sadd(key, JSON.stringify(value));
     }
 
@@ -78,11 +80,31 @@ export class RedisDatabase implements DatabaseDriver {
     getMembers(channel: string): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             this._redis.smembers(channel).then(members => {
-                Log.success(`REDIS SMEMBERS on Channel: ${channel}, Members: ${JSON.stringify(members)}`)
+                this.debug(`REDIS SMEMBERS on Channel: ${channel}, Members: ${JSON.stringify(members)}`)
                 resolve(members.map(user => {
                     return JSON.parse(user);
                 }))
             });
         });
+    }
+
+    setUserInServer(key: string, value: any): void {
+        throw new Error("Method not implemented.");
+    }
+
+    delUserInServerBySocketId(collection: string, socket_id: any): void {
+        throw new Error("Method not implemented.");
+    }
+
+    getMemberBySocketId(channel: string, member: any): Promise<any> {
+        throw new Error("Method not implemented.");
+    }
+
+    removeInactive(channel: string, sockets: any): Promise<any> {
+        throw new Error("Method not implemented.");
+    }
+
+    removeInactiveSocketsInThisServer(collection: string, sockets: any): Promise<any> {
+        throw new Error("Method not implemented.");
     }
 }

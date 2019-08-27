@@ -2,18 +2,19 @@ import {describe, before, after, it} from "mocha";
 import {expect} from "chai";
 
 import {MockLaravel} from "../mock_laravel";
+import {EchoServerFactory} from "../../echoServerFactory";
 
 const Echo = require("laravel-echo");
 
 let io = require('socket.io-client');
+const path = require('path');
+const options = require(path.resolve(__dirname, '../../../laravel-echo-server.json'));
 
-const echo = require('../../index');
-const options = echo.defaultOptions;
 
 options.authHost = `http://localhost:${options.dev.mock.laravel_port}`;
 options.devMode = true;
 options.log = "file";
-options.console_log = false;
+options.port = 3333;
 
 const ioUrl = `${options.protocol}://${options.host}:${options.port}`;
 
@@ -23,7 +24,7 @@ describe('Laravel Echo Auth Methods', function () {
 
     /** setup echo server and mock Laravel Server*/
     before(function (done) {
-        echo.run(options).then(() => {
+        EchoServerFactory.start(options.port, options).then(() => {
            mockLaravel.run().then(() => {
                 return done();
             })
@@ -52,6 +53,7 @@ describe('Laravel Echo Auth Methods', function () {
             }
         });
 
+        console.log(echo_client)
         echo_client.connector.socket.on('disconnect', () => {
             expect(echo_client.connector.socket.connected).to.be.false;
             done();

@@ -1,11 +1,13 @@
 import {IoUtils} from "../utils/ioUtils";
-import {Log} from "../log";
 import {Logger} from "../log/logger";
 
 export class CommandChannel {
+    private debug: any;
+    private ioUtils: IoUtils;
 
     constructor(private options: any, protected io: any, protected log: Logger){
-
+        this.debug = require('debug')(`server_${this.options.port}:command-channel`);
+        this.ioUtils = new IoUtils(this.options)
     }
 
     /**
@@ -19,17 +21,17 @@ export class CommandChannel {
         switch (comando) {
             case 'close_socket': {
 
-                Log.success('Close Socket ID: ' + command.data);
+                this.debug('Close Socket ID: ' + command.data);
 
-                IoUtils.close_all_user_sockets(command.data, this.io, this.log);
+                this.ioUtils.close_all_user_sockets(command.data, this.io, this.log);
 
                 break;
             }
             case 'exit_channel': {
-                Log.success(`kick off user_id:${command.data.user_id} from Channel:${command.data.channel}`);
+                this.debug(`kick off user_id:${command.data.user_id} from Channel:${command.data.channel}`);
                 this.log.info(`kick off user_id:${command.data.user_id} from Channel:${command.data.channel}`);
 
-                let user = IoUtils.findUser(command.data.user_id, this.io);
+                let user = this.ioUtils.findUser(command.data.user_id, this.io);
 
                 //TODO this.channel.leave(socket, room, 'Laravel Order');
 

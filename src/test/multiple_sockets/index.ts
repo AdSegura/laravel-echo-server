@@ -1,42 +1,39 @@
 import {describe, before, after, it} from "mocha";
 import {expect} from "chai";
-
 import {MockLaravel} from "../mock_laravel";
-
+import {EchoServerFactory} from "../../echoServerFactory";
 const Echo = require("laravel-echo");
-
 let io = require('socket.io-client');
+const path = require('path');
+const options = require(path.resolve(__dirname, '../../../laravel-echo-server.json'));
 
-const echo = require('../../index');
-const options = echo.defaultOptions;
-
-options.authHost = `http://localhost:${options.dev.mock.laravel_port}`;
-options.devMode = true;
-options.log = "file";
-options.console_log = false;
-
-const ioUrl = `${options.protocol}://${options.host}:${options.port}`;
+const port = 5000;
+const ioUrl = `${options.protocol}://${options.host}:${port}`;
+const authHost = `http://localhost:${options.dev.mock.laravel_port}`;
 
 describe('Laravel Echo Multiple Sockets not Allowed', function () {
+
+    let echo_server;
 
     const mockLaravel = new MockLaravel(options);
 
     /** setup echo server and mock Laravel Server*/
     before(function (done) {
-        options.multiple_sockets = false;
-        echo.run(options).then(() => {
-            mockLaravel.run().then(() => {
-                return done();
-            })
-        })
+        let multiple_sockets = false;
+        EchoServerFactory.start(port, {authHost, multiple_sockets })
+            .then(server => {
+                echo_server = server;
+                mockLaravel.run().then(() => {
+                    return done();
+                })
+            });
     });
 
     /** stop mock Laravel Server*/
     after(function (done) {
         mockLaravel.stop();
-        echo.stop().then(() => {
-            return done();
-        })
+        echo_server.stop();
+        return done();
     });
 
 
@@ -93,24 +90,26 @@ describe('Laravel Echo Multiple Sockets not Allowed', function () {
 
 describe('Laravel Echo Multiple Sockets Allowed', function () {
 
+    let echo_server;
     const mockLaravel = new MockLaravel(options);
 
     /** setup echo server and mock Laravel Server*/
     before(function (done) {
-        options.multiple_sockets = true;
-        echo.run(options).then(() => {
-            mockLaravel.run().then(() => {
-                return done();
-            })
-        })
+        let multiple_sockets = true;
+        EchoServerFactory.start(port, {console_log: false, authHost, multiple_sockets })
+            .then(server => {
+                echo_server = server;
+                mockLaravel.run().then(() => {
+                    return done();
+                })
+            });
     });
 
     /** stop mock Laravel Server*/
     after(function (done) {
         mockLaravel.stop();
-        echo.stop().then(() => {
-            return done();
-        })
+        echo_server.stop()
+        return done();
     });
 
 

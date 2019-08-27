@@ -2,26 +2,16 @@ import {HttpSubscriber, RedisSubscriber, Subscriber} from './subscribers';
 import {Channel} from './channels';
 import {Server} from './server';
 import {HttpApi} from './api';
-import {Log} from './log';
 import {IoUtils} from "./utils/ioUtils";
-const packageFile = require('../package.json');
-import {FsUtils} from "./utils/fsUtils";
 import {CommandChannel} from "./channels/commandChannel";
 import {Database} from "./database";
 import {Logger} from "./log/logger";
 
-const defaultOptions = FsUtils.getConfigfile();
 
 /**
  * Echo server class.
  */
 export class EchoServer {
-
-    /** Default server options. */
-    public defaultOptions: any;
-
-    /** Configurable server options */
-    public options: any;
 
     /** Socket.io server instance. */
     private server: Server;
@@ -43,10 +33,22 @@ export class EchoServer {
 
     /** Database instance .*/
     protected db: Database;
+    private debug: any;
+    private ioUtils: IoUtils;
 
     /** Create a new instance. */
-    constructor() {
-        this.defaultOptions = defaultOptions;
+    constructor(private options: any) {
+
+        this.debug = require('debug')(`server_${this.options.port}`);
+        this.log = new Logger(this.options);
+
+        this.db = new Database(this.options, this.log);
+
+
+        this.server = new Server(this.options, this.log);
+        this.log.setServerId(this.server.getServerId());
+
+        this.ioUtils = new IoUtils(this.options);
     }
 
     /**
@@ -54,23 +56,15 @@ export class EchoServer {
      *
      * @return promise
      */
-    run(options: any): Promise<any> {
-
-        this.options = Object.assign(this.defaultOptions, options);
-
-        this.log = new Logger(this.options);
-        this.db = new Database(this.options, this.log);
-        this.server = new Server(this.options, this.log);
-        this.log.setServerId(this.server.getServerId());
-
+    run = () => {
         return new Promise((resolve, reject) => {
             this.startup();
             this.server.init().then(io => {
                 this.init(io).then(() => {
                     this.log.info(`Starting server ${this.server.getServerId()} in ${this.options.devMode ? 'DEV' : 'PROD'} mode`);
                     resolve(this);
-                }, error => Log.error(error));
-            }, error => Log.error(error));
+                }).catch(e => reject(e));
+            }).catch(e => reject(e));
         });
     }
 
@@ -104,7 +98,8 @@ export class EchoServer {
             this.httpApi.init();
 
             this.onConnect();
-            this.listen().then(() => resolve(), err => Log.error(err));
+
+            this.listen().then(() => resolve(), err => this.debug(err));
         });
     }
 
@@ -112,12 +107,9 @@ export class EchoServer {
      * Text shown at startup.
      */
     startup(): void {
-        Log.title(`\nL A R A V E L  E C H O  S E R V E R  C L U S T E R\n`);
-        Log.info(`version ${packageFile.version} Cluster \n`);
-
-        Log.info(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`, true);
-        Log.success(`Log Mode is ${this.options.log} mode`, true);
-
+        this.debug(`\nL A R A V E L  E C H O  S E R V E R  C L U S T E R ${this.server.getServerId()}\n`);
+        this.debug(`Starting server in ${this.options.devMode ? 'DEV' : 'PROD'} mode`, true);
+        this.debug(`Server: ${this.server.getServerId()} Log Mode is ${this.options.log} mode`, true);
     }
 
     /**
@@ -154,7 +146,7 @@ export class EchoServer {
 
         if(channel === this.options.command_channel){
 
-            Log.success('ECHO SERVER GETS A COMMAND FROM LARAVEL');
+            this.debug('ECHO SERVER GETS A COMMAND FROM LARAVEL');
             this.log.info('Comand to Execute: ' + JSON.stringify(message.data.command));
 
             this.commandChannel.execute(message.data.command)
@@ -191,7 +183,7 @@ export class EchoServer {
      * Broadcast to all members on channel.
      */
     toAll(channel: string, message: any): boolean {
-        Log.success('Message To All ' + JSON.stringify(message) + ' On Channel ' + channel)
+        this.debug('Message To All ' + JSON.stringify(message) + ' On Channel ' + channel)
         this.server.io.to(channel)
             .emit(message.event, channel, message.data);
 
@@ -208,29 +200,29 @@ export class EchoServer {
                 .then(auth => {
                     if(auth === false) {
                         const msg = `Auth: Failed for user:${auth.channel_data.user_id}, channel:root`;
-                        return IoUtils.disconnect(socket, this.log, msg);
+                        return this.ioUtils.disconnect(socket, this.log, msg);
                     }
 
                     if(! auth.hasOwnProperty('channel_data') ){
                         let msg_err = 'Error: on Connect Echo-Server response';
                         msg_err += ' do not have channel_data property';
                         this.log.error(msg_err);
-                        Log.error(msg_err);
+                        this.debug(msg_err);
 
-                        return IoUtils.disconnect(socket, this.log, msg_err);
+                        return this.ioUtils.disconnect(socket, this.log, msg_err);
                     } else if(! auth.channel_data.hasOwnProperty('user_id') ){
                         let msg_err = 'Error: on Connect Echo-Server response';
                         msg_err += ' do not have channel_data.user_id property';
                         this.log.error(msg_err);
-                        Log.error(msg_err);
+                        this.debug(msg_err);
 
-                        return IoUtils.disconnect(socket, this.log, msg_err);
+                        return this.ioUtils.disconnect(socket, this.log, msg_err);
                     }
 
                     socket.user_id = auth.channel_data.user_id;
-                    const ip = IoUtils.getIp(socket, this.options);
+                    const ip = this.ioUtils.getIp(socket, this.options);
 
-                    Log.success(`LOG Success on Server: ${this.server.getServerId()}`);
+                    this.debug(`LOG Success on Server: ${this.server.getServerId()}`);
 
                     this.db.setUserInServer('echo_users', {
                         user_id: auth.channel_data.user_id,
@@ -241,9 +233,9 @@ export class EchoServer {
                     });
 
                     if(this.options.multiple_sockets == false) {
-                        Log.success(`close_all_user_sockets_except_this_socket ${socket.id}`);
+                        this.debug(`close_all_user_sockets_except_this_socket ${socket.id}`);
 
-                        IoUtils.close_all_user_sockets_except_this_socket(
+                        this.ioUtils.close_all_user_sockets_except_this_socket(
                             auth.channel_data.user_id,
                             socket.id,
                             this.server.io,
@@ -253,7 +245,7 @@ export class EchoServer {
 
                     this.db.removeInactiveSocketsInThisServer(
                         'echo_users',
-                        IoUtils.getAllActiveSocketsInThisIoServer(this.server.io)
+                        this.ioUtils.getAllActiveSocketsInThisIoServer(this.server.io)
                     );
 
                     const msg_sucess = [
@@ -263,7 +255,7 @@ export class EchoServer {
                         `with Socket:${socket.id} with IP:${ip}`
                     ].join(' ');
 
-                    Log.success(msg_sucess);
+                    this.debug(msg_sucess);
                     this.log.info(msg_sucess);
 
                     return this.startSubscribers(socket);
@@ -271,10 +263,10 @@ export class EchoServer {
                 })
                 .catch(e => {
                     const msg_error = `Auth: Socket:${socket.id} join Root Auth Error, reason:${e.reason}`
-                    Log.error(msg_error);
+                    this.debug(msg_error);
                     this.log.error(msg_error);
 
-                    IoUtils.disconnect(socket, this.log, msg_error)
+                    this.ioUtils.disconnect(socket, this.log, msg_error)
                 })
         });
     }

@@ -1,16 +1,17 @@
 import {Logger} from "../log/logger";
 
 var _ = require('lodash');
-import { Channel } from './channel';
 import { Database } from './../database';
-import { Log } from './../log';
+
 
 export class PresenceChannel {
+    private debug: any;
 
     /**
      * Create a new Presence channel instance.
      */
     constructor(private io, private options: any, protected log: Logger, protected db: Database) {
+        this.debug = require('debug')(`server_${this.options.port}:presence-channel`);
     }
 
     /**
@@ -24,7 +25,7 @@ export class PresenceChannel {
      * Check if a user is on a presence channel.
      */
     isMember(channel: string, member: any): Promise<boolean> {
-        Log.success(`Is Member channel: ${channel}, member ${JSON.stringify(member)}`);
+        this.debug(`Is Member channel: ${channel}, member ${JSON.stringify(member)}`);
         return new Promise((resolve, reject) => {
             this.db.isMember(channel, member).then(res => {
                 if(res) return resolve (true);
@@ -41,7 +42,7 @@ export class PresenceChannel {
 
         return new Promise((resolve, reject) => {
             this.io.of('/').in(channel).clients((error, clients) => {
-                Log.success(`Remove Inactive from Chnnel ${channel}, active Sockets from IO: ${clients}`)
+                this.debug(`Remove Inactive from Chnnel ${channel}, active Sockets from IO: ${clients}`)
                 return this.db.removeInactive(channel, clients)
                     .then(() => {
                         return resolve()
@@ -56,7 +57,7 @@ export class PresenceChannel {
      */
     join(socket: any, channel: string, member: any) {
         if (!member) {
-            Log.error('Unable to join channel. Member data for presence channel missing');
+            this.debug('Unable to join channel. Member data for presence channel missing');
             return;
         }
 
@@ -68,7 +69,7 @@ export class PresenceChannel {
                     members = members || [];
                     members.push(member);
 
-                    Log.success(`On JOIN, DB set active MEMBERS: ${JSON.stringify(members)}`);
+                    this.debug(`On JOIN, DB set active MEMBERS: ${JSON.stringify(members)}`);
 
                     this.db.setMember(channel, member);
 
@@ -79,12 +80,12 @@ export class PresenceChannel {
                     if (!is_member)
                         this.onJoin(socket, channel, member);
 
-                }, error => Log.error(error));
+                }, error => this.debug(error));
             }, (e) => {
-                Log.error('Error retrieving presence channel members ' + e.message);
+                this.debug('Error retrieving presence channel members ' + e.message);
             });
         }).catch(e => {
-            Log.error('Error Remove Inactive presence channel ' + e.message);
+            this.debug('Error Remove Inactive presence channel ' + e.message);
         })
     }
 
@@ -93,10 +94,10 @@ export class PresenceChannel {
      * only if not other presence channel instances exist.
      */
     leave(socket: any, channel: string): void {
-        Log.success(`Leave Presence Channel, SocketId:${socket.id}, channel:${channel}`)
+        this.debug(`Leave Presence Channel, SocketId:${socket.id}, channel:${channel}`)
         this.db.getMemberBySocketId(channel, socket.id).then(member => {
             if(member) {
-                Log.success(`On JOIN getMemberBySocketId, channel:${channel}, MEMBER: ${JSON.stringify(member)}`)
+                this.debug(`On JOIN getMemberBySocketId, channel:${channel}, MEMBER: ${JSON.stringify(member)}`)
                 this.db.delMember(channel, member);
             }
 
@@ -106,14 +107,14 @@ export class PresenceChannel {
                     this.onLeave(channel, member);
                 }
             });
-        }, error => Log.error(error));
+        }, error => this.debug(error));
     }
 
     /**
      * On join event handler.
      */
     onJoin(socket: any, channel: string, member: any): void {
-        Log.success(`On JOIN, SocketId:${socket.id}, channel:${channel}, MEMBER: ${JSON.stringify(member)}`)
+        this.debug(`On JOIN, SocketId:${socket.id}, channel:${channel}, MEMBER: ${JSON.stringify(member)}`)
         //console.error(this.io.sockets)
         if(! this.io.sockets.connected[socket.id]) return;
         this.io
@@ -137,7 +138,7 @@ export class PresenceChannel {
      * On subscribed event emitter.
      */
     onSubscribed(socket: any, channel: string, members: any[]) {
-        Log.success(`On SUBSCRIBED, Channel ${channel} io.to(${socket.id}).emit('presence:subscribed', channel, members): ${JSON.stringify(members)}`)
+        this.debug(`On SUBSCRIBED, Channel ${channel} io.to(${socket.id}).emit('presence:subscribed', channel, members): ${JSON.stringify(members)}`)
         this.io
             .to(socket.id)
             .emit('presence:subscribed', channel, members);

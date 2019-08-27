@@ -1,8 +1,7 @@
-import { Log } from './../log';
 import { Subscriber } from './subscriber';
-var url = require('url');
 
 export class HttpSubscriber implements Subscriber {
+    private debug: any;
     /**
      * Create new instance of http subscriber.
      *
@@ -10,7 +9,9 @@ export class HttpSubscriber implements Subscriber {
      * @param options
      * @param log
      */
-    constructor(private express, private options, protected log: any) { }
+    constructor(private express, private options, protected log: any) {
+        this.debug = require('debug')(`server_${this.options.port}:http-subscriber`);
+    }
 
     /**
      * Subscribe to events to broadcast.
@@ -23,7 +24,7 @@ export class HttpSubscriber implements Subscriber {
             this.express.post('/apps/:appId/events', (req, res) => {
                 let body: any = [];
                 res.on('error', (error) => {
-                    Log.error(error);
+                    this.debug(error);
                     this.log.error('Http Subscriber events ' + error);
                 });
 
@@ -31,7 +32,7 @@ export class HttpSubscriber implements Subscriber {
                     .on('end', () => this.handleData(req, res, body, callback));
             });
 
-            Log.success('Listening for http events...');
+            this.debug('Listening for http events...');
 
             resolve();
         });
@@ -64,8 +65,8 @@ export class HttpSubscriber implements Subscriber {
 
             var channels = body.channels || [body.channel];
 
-            Log.info("Channel: " + channels.join(', '));
-            Log.info("Event: " + message.event);
+            this.debug("Channel: " + channels.join(', '));
+            this.debug("Event: " + message.event);
 
             channels.forEach(channel => broadcast(channel, message));
 

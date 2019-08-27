@@ -18,6 +18,9 @@ export class Bunyan implements Log_interface {
      */
     private readonly _path: any;
 
+    /** syslog options */
+    private syslogOptions: { port: string | number; host: string; type: string; facility: any };
+
     /**
      * Create a new instance Bunyan based on options.log
      *
@@ -25,7 +28,30 @@ export class Bunyan implements Log_interface {
      */
     constructor(private options: any) {
 
-        this._log = this.sysLogger();
+        this.syslogOptions = {
+            type: this.options.syslog.type || 'sys',
+            facility: this.options.syslog.facility ? bsyslog[this.options.syslog.facility] : bsyslog.local0,
+            host: this.options.syslog.host || '127.0.0.1',
+            port: this.options.syslog.port ||  514
+        };
+
+        if(this.options.testMode == true) this.options.log = 'file';
+
+        switch (this.options.log) {
+            case 'file': {
+                this._path = path.resolve(__dirname, this.options.log_folder);
+                this._log = this.fileLogger();
+                break;
+            }
+            case 'syslog': {
+                this._log = this.sysLogger();
+                break;
+            }
+            default: {
+                console.error('No logger defined')
+            }
+        }
+
     }
 
     /**
@@ -39,21 +65,11 @@ export class Bunyan implements Log_interface {
             streams: [{
                 level: 'info',
                 type: 'raw',
-                stream: bsyslog.createBunyanStream({
-                    type: this.options.syslog.type || 'sys',
-                    facility: this.options.syslog.facility ? bsyslog[this.options.syslog.facility] : bsyslog.local0,
-                    host: this.options.syslog.host || '127.0.0.1',
-                    port: this.options.syslog.port ||  514
-                })
+                stream: bsyslog.createBunyanStream(this.syslogOptions)
             }, {
                 level: 'error',
                 type: 'raw',
-                stream: bsyslog.createBunyanStream({
-                    type: this.options.syslog.type || 'sys',
-                    facility: this.options.syslog.facility ? bsyslog[this.options.syslog.facility] : bsyslog.local0,
-                    host: this.options.syslog.host || '127.0.0.1',
-                    port: this.options.syslog.port ||  514
-                })
+                stream: bsyslog.createBunyanStream(this.syslogOptions)
             }]
         });
     }

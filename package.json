@@ -27,6 +27,7 @@
     "bunyan-syslog": "^0.3.2",
     "colors": "^1.1.2",
     "cookie": "^0.4.0",
+    "debug": "^4.1.1",
     "dotenv": "^5.0.1",
     "express": "^4.14.0",
     "inquirer": "^1.1.3",

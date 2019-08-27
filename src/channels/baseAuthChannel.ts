@@ -1,6 +1,4 @@
-import {Log} from "../log";
 import {Logger} from "../log/logger";
-
 let url = require('url');
 const request = require('request');
 const cookie = require('cookie');
@@ -17,6 +15,9 @@ export class BaseAuthChannel {
      */
     protected rootChannel = 'root';
 
+    /** debug */
+    private readonly debug: any;
+
     /**
      * instance base auth
      *
@@ -25,6 +26,7 @@ export class BaseAuthChannel {
      */
     constructor(protected options: any, protected log: Logger) {
 
+        this.debug = require('debug')(`server_${this.options.port}:baseAuth-channel`);
         this.request = request;
     }
 
@@ -35,7 +37,7 @@ export class BaseAuthChannel {
 
         const options = this.prepareRequestOptions(socket, data);
 
-        Log.info(`[${new Date().toLocaleTimeString()}] - Sending auth request to: ${options.url} channel:${options.form.channel_name}\n`);
+        this.debug(`[${new Date().toLocaleTimeString()}] - Sending auth request to: ${options.url} channel:${options.form.channel_name}\n`);
 
         //this.log.info(`Sending auth request to: ${options.url} channel_request:${options.form.channel_name}`);
 
@@ -79,16 +81,16 @@ export class BaseAuthChannel {
 
                 if (error) {
 
-                    Log.error(`[${new Date().toLocaleTimeString()}] - Error authenticating ${socket.id} for ${options.form.channel_name}`);
+                    this.debug(`[${new Date().toLocaleTimeString()}] - Error authenticating ${socket.id} for ${options.form.channel_name}`);
                     this.log.error(`Error authenticating ${socket.id} for ${options.form.channel_name}`);
 
                     reject({reason: 'Error sending authentication request.', status: 0});
 
                 } else if (response.statusCode !== 200) {
 
-                    Log.warning(`[${new Date().toLocaleTimeString()}] - ${socket.id} could not be authenticated to ${options.form.channel_name}`);
+                    this.debug(`[${new Date().toLocaleTimeString()}] - ${socket.id} could not be authenticated to ${options.form.channel_name}`);
                     this.log.error(`${socket.id} could not be authenticated to ${options.form.channel_name}`);
-                    Log.error(response.body);
+                    this.debug(response.body);
 
                     reject({
                         reason: 'Client can not be authenticated, got HTTP status ' + response.statusCode,
@@ -108,7 +110,7 @@ export class BaseAuthChannel {
                         `channel:${options.form.channel_name}`
                        ].join(' ');
 
-                    Log.info(`[${new Date().toLocaleTimeString()}] - ` + msg);
+                    this.debug(`[${new Date().toLocaleTimeString()}] - ` + msg);
                     this.log.info(msg);
 
                     resolve(body);
@@ -143,7 +145,7 @@ export class BaseAuthChannel {
             }
         }
 
-        Log.success(`[${new Date().toLocaleTimeString()}] - Preparing authentication request to: ${authHostSelected}`);
+        this.debug(`[${new Date().toLocaleTimeString()}] - Preparing authentication request to: ${authHostSelected}`);
 
         return authHostSelected;
     }
@@ -171,15 +173,15 @@ export class BaseAuthChannel {
 
         if (socket.request.headers['Authorization']) {
             headers['Authorization'] = socket.request.headers['Authorization']
-            Log.success("Bearer Authorization");
+            this.debug("Bearer Authorization");
         } else if (socket.request.headers['authorization']) {
             headers['Authorization'] = socket.request.headers['authorization']
-            Log.success("Bearer Authorization");
+            this.debug("Bearer Authorization");
         } else if (socket.request._query.token) {
             headers['Authorization'] = ' Bearer ' + socket.request._query.token;
-            Log.success("Query Token Authorization");
+            this.debug("Query Token Authorization");
         } else {
-            Log.success("JWT_TOKEN Cookie Authorization");
+            this.debug("JWT_TOKEN Cookie Authorization");
             const cookies = cookie.parse(socket.request.headers.cookie);
             headers['Authorization'] = ' Bearer ' + cookies['jwt_token'];
         }

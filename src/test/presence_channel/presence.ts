@@ -2,9 +2,9 @@ import {describe, before, after, it} from "mocha";
 import {expect} from "chai";
 import {MockLaravel} from "../mock_laravel";
 import {EchoClientFactory} from "../echoClientFactory";
-import {EchoServerFactory} from "../echoServerFactory";
-const echo = require('../../index');
-
+import {EchoServerFactory} from "../../echoServerFactory";
+const path = require('path');
+const options = require(path.resolve(__dirname, '../../../laravel-echo-server.json'));
 
 /**
  * Presence channel Test
@@ -15,30 +15,29 @@ const echo = require('../../index');
 describe('Presence Channel Tests same Echo server', function () {
     let echo_server;
 
-    const options = echo.defaultOptions;
+    const port = 4000;
 
-    const ioUrl = `${options.protocol}://${options.host}:${options.port}`;
+    const ioUrl = `${options.protocol}://${options.host}:${port}`;
 
     const mockLaravel = new MockLaravel(options);
 
+    const authHost = `http://localhost:${options.dev.mock.laravel_port}`;
+
     /** setup echo server and mock Laravel Server*/
     before(function (done) {
-        let E1 = new EchoServerFactory(4000, {console_log: false, log: "syslog"});
-        E1.start()
+        EchoServerFactory.start(port, {authHost })
             .then(server => {
                 echo_server = server;
                 mockLaravel.run().then(() => {
                     return done();
                 })
-
             });
-
     });
 
     /** stop mock Laravel Server*/
     after(function (done) {
         mockLaravel.stop();
-        echo_server.stopServer()
+        echo_server.stop();
         done();
     });
 
@@ -60,7 +59,7 @@ describe('Presence Channel Tests same Echo server', function () {
 
             echo_client1.join(`chat`)
 
-        }, 1000)
+        }, 2000)
 
     }).timeout(5000)
 

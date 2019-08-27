@@ -1,7 +1,11 @@
-import {Log} from "../log";
 import {Logger} from "../log/logger";
 
 export class IoUtils {
+    public debug: any;
+
+    constructor(private options: any){
+        this.debug = require('debug')(`server_${this.options.port}:io`);
+    }
 
     /**
      * Find User
@@ -9,7 +13,7 @@ export class IoUtils {
      * @param id
      * @param io
      */
-    static findUser(id: number, io: any): any {
+    findUser(id: number, io: any): any {
 
         let ids = Object.keys(io.sockets.sockets);
 
@@ -32,7 +36,7 @@ export class IoUtils {
     /**
      * Return a channel by its socket id.
      */
-    static findSocketById(socket_id: string, io: any): any {
+    findSocketById(socket_id: string, io: any): any {
         return io.sockets.connected[socket_id];
     }
 
@@ -42,7 +46,7 @@ export class IoUtils {
      * @param channel
      * @param io
      */
-    static getUsersInChannel(channel: string, io: any){
+    getUsersInChannel(channel: string, io: any){
         let room = io.sockets.adapter.rooms[channel];
         let sockets = [];
 
@@ -65,7 +69,7 @@ export class IoUtils {
      *
      * @returns array [{socketId, user_id}]
      */
-    static getUserSocketsInChannel(user_id: number, channel: string, io: any){
+    getUserSocketsInChannel(user_id: number, channel: string, io: any){
 
         let sockets = this.getUsersInChannel(channel, io);
 
@@ -86,8 +90,8 @@ export class IoUtils {
      * @param reason
      * @param logger
      */
-    static disconnect(socket: any, logger: Logger, reason: string){
-        Log.error(`Disconnect socket:${socket.id}, reason:${reason}`);
+    disconnect(socket: any, logger: Logger, reason: string){
+        this.debug(`Disconnect socket:${socket.id}, reason:${reason}`);
         logger.info(`Disconnect socket:${socket.id}, reason:${reason}`);
         socket.disconnect(true)
     }
@@ -98,7 +102,7 @@ export class IoUtils {
      * @param socket
      * @param options
      */
-    static getIp(socket: any, options: any){
+    getIp(socket: any, options: any){
 
         if(options.behind_proxy)
             return socket.handshake.headers['x-forwarded-for'];
@@ -113,13 +117,13 @@ export class IoUtils {
      * @param io
      * @param log
      */
-    static close_all_user_sockets(user_id: number, io: any, log: Logger): void{
+    close_all_user_sockets(user_id: number, io: any, log: Logger): void{
 
         let user = this.findUser(user_id, io);
 
         if (user.sockets.length === 0) return;
 
-        Log.success('close_all_user_sockets: We have Rogue Sockets to Kill');
+        this.debug('close_all_user_sockets: We have Rogue Sockets to Kill');
 
         user.sockets.forEach(socketId => {
             this.disconnect(
@@ -138,13 +142,13 @@ export class IoUtils {
      * @param io
      * @param log
      */
-    static close_all_user_sockets_except_this_socket(user_id: number, socket_id: string, io: any, log: Logger): void{
+    close_all_user_sockets_except_this_socket(user_id: number, socket_id: string, io: any, log: Logger): void{
 
         let user = this.findUser(user_id, io);
 
         if (user.sockets.length === 0) return;
 
-        Log.success('close_all_user_sockets: We have Rogue Sockets to Kill');
+        this.debug('close_all_user_sockets: We have Rogue Sockets to Kill');
 
         user.sockets.forEach(socketId => {
             if(socketId !== socket_id)
@@ -162,7 +166,7 @@ export class IoUtils {
      * @param io
      * @return array sockets_id
      */
-    static getAllActiveSocketsInThisIoServer(io: any): any{
+    getAllActiveSocketsInThisIoServer(io: any): any{
         const sockets = io.sockets.clients();
         return Object.keys(sockets.connected);
     }

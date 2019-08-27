@@ -1,9 +1,10 @@
-import { Log } from './../log';
 let url = require('url');
 import * as _ from 'lodash';
 import {IoUtils} from "../utils/ioUtils";
 
 export class HttpApi {
+    private debug: any;
+    private ioUtils: IoUtils;
     /**
      * Create new instance of http subscriber.
      *
@@ -13,7 +14,10 @@ export class HttpApi {
      * @param  {object} options object
      * @param  {any} log
      */
-    constructor(private io, private channel, private express, private options, protected log: any) { }
+    constructor(private io, private channel, private express, private options, protected log: any) {
+        this.debug = require('debug')(`server_${this.options.port}:httpApi`);
+        this.ioUtils = new IoUtils(this.options)
+    }
 
     /**
      * Initialize the API.
@@ -88,7 +92,7 @@ export class HttpApi {
     findUser(req: any, res: any): void {
         const user_id = req.params.user_id;
 
-        const user_data = IoUtils.findUser(user_id, this.io);
+        const user_data = this.ioUtils.findUser(user_id, this.io);
 
         res.json({ user: user_data });
     }
@@ -158,7 +162,7 @@ export class HttpApi {
         let subscriptionCount = room ? room.length : 0;
 
 
-        let sockets = IoUtils.getUsersInChannel(channelName, this.io);
+        let sockets = this.ioUtils.getUsersInChannel(channelName, this.io);
 
         let result = {
             subscription_count: subscriptionCount,
@@ -203,7 +207,7 @@ export class HttpApi {
             });
 
             res.json({ users: users });
-        }, error => Log.error(error));
+        }, error => this.debug(error));
     }
 
     /**
@@ -215,7 +219,7 @@ export class HttpApi {
     getUserSocketsInChannel(req: any, res: any): void {
         const {user_id, channel_name} = req.params;
 
-        const sockets = IoUtils.getUserSocketsInChannel(user_id, channel_name, this.io);
+        const sockets = this.ioUtils.getUserSocketsInChannel(user_id, channel_name, this.io);
 
         return res.json(sockets);
     }
@@ -229,10 +233,10 @@ export class HttpApi {
     kickOffUserFromChannel(req: any, res: any): void {
         const {user_id, channel_name} = req.params;
 
-        const sockets = IoUtils.getUserSocketsInChannel(user_id, channel_name, this.io);
+        const sockets = this.ioUtils.getUserSocketsInChannel(user_id, channel_name, this.io);
 
         sockets.forEach(socketInfo => {
-            let socket = IoUtils.findSocketById(socketInfo.socket_id, this.io);
+            let socket = this.ioUtils.findSocketById(socketInfo.socket_id, this.io);
             if(socket)
                 this.channel.leave(socket, channel_name, 'kickOff Channel')
         });

@@ -1,10 +1,9 @@
-import {Log} from "../log";
-
 const fs = require('fs');
 const path = require('path');
 const colors = require("colors");
 const echo = require('./../../dist');
-import {EchoServer} from "../echo-server";
+
+import {EchoServerFactory} from "../echoServerFactory";
 const inquirer = require('inquirer');
 const crypto = require('crypto');
 
@@ -336,21 +335,15 @@ export class Cli {
     }
 
     startServer(options: any): Promise<any>{
-        options = Object.assign(this.defaultOptions, options);
+        options = Object.assign({}, this.defaultOptions, options);
 
         if(options.testMode) options.authHost = `http://localhost:${options.dev.mock.laravel_port}`;
         this.lockFile = path.resolve(__dirname, `../../laravel-echo-server_${options.port}.lock`);
 
-        const echo_server = new EchoServer()
+        //const echo_server = new EchoServer()
 
-        return new Promise((resolve, reject) => {
 
-            return echo_server.run(options).then(() => {
-                return resolve(this)
-            }).catch(e => {
-                return reject(e)
-            })
-        })
+        return EchoServerFactory.start(options.port, options)
     }
     /**
      * Stop the Laravel Echo server.

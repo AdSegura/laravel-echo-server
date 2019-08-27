@@ -1,5 +1,4 @@
 import { DatabaseDriver } from './database-driver';
-import {Log} from "../log";
 import {Logger} from "../log/logger";
 const MongoClient = require('mongodb').MongoClient;
 
@@ -10,37 +9,51 @@ export class MongoDatabase implements DatabaseDriver {
 
     /** mongo client */
     private db: any;
+    private debug: any;
+    private mongoOpt: { password: null; port: string; dbName: string; host: string; user: null };
+
 
     /**
      * Create a new cache instance.
      */
     constructor(private options: any, protected log: Logger) {
 
+        this.debug = require('debug')(`server_${this.options.port}:mongo`);
+
+        if(this.options.testMode == true){
+
+            this.mongoOpt = this.options.dev.databaseConfig.mongo
+
+        } else {
+
+            this.mongoOpt = this.options.databaseConfig.mongo
+        }
+
+
         this._mongo = new MongoClient(this.url(), {
                 useNewUrlParser: true,
-                useUnifiedTopology: true
+                useUnifiedTopology: true,
+                connectTimeoutMS: 3000
             });
 
-        this.connect(this.options.databaseConfig.mongo.dbName);
+        this.connect();
     }
 
     /**
      * Connect top Mongo set up this.db
-     *
-     * @param dbName
      */
-    connect (dbName: string): any{
+    connect (): any{
         this._mongo.connect((err) => {
 
             if(err) {
-                const msg = `Mongo: Connection to Mongo Server:${this.url()} Database:${dbName} has Failed`;
-                Log.error(msg);
+                const msg = `Mongo: Connection to Mongo Server:${this.url()} Database:${this.mongoOpt.dbName} has Failed`;
+                this.debug(msg);
                 this.log.error(msg);
             }
 
-            Log.success("Connected successfully to Mongo server");
+            this.debug("Connected successfully to Mongo server");
 
-            this.db = this._mongo.db(dbName);
+            this.db = this._mongo.db(this.mongoOpt.dbName);
         });
     }
 
@@ -51,13 +64,10 @@ export class MongoDatabase implements DatabaseDriver {
      */
     private url(): string{
 
-        if(! this.options.databaseConfig.mongo)
-            throw new Error('Mongo: Url Error: database Mongo config found!');
-
         let url = 'mongodb://';
 
-        const user = this.options.databaseConfig.mongo.user;
-        const password = this.options.databaseConfig.mongo.password;
+        const user = this.mongoOpt.user;
+        const password = this.mongoOpt.password;
 
         if(user){
             url += user;
@@ -67,8 +77,8 @@ export class MongoDatabase implements DatabaseDriver {
             url += ":''@";
         }
 
-        url += this.options.databaseConfig.mongo.host;
-        url += `:${this.options.databaseConfig.mongo.port}`;
+        url += this.mongoOpt.host;
+        url += `:${this.mongoOpt.port}`;
 
         return url;
     }
@@ -81,7 +91,7 @@ export class MongoDatabase implements DatabaseDriver {
      * @param member
      */
     setMember(channel: string, member: any): void {
-        Log.success(`MONGO SetMember on Channel: ${channel}, Member: ${JSON.stringify(member)}`);
+        this.debug(`MONGO SetMember on Channel: ${channel}, Member: ${JSON.stringify(member)}`);
         this.insertOne(channel, member);
     }
 
@@ -93,7 +103,7 @@ export class MongoDatabase implements DatabaseDriver {
      */
     delMember(channel: string, member: any): void {
 
-        Log.success(`MONGO Delete Member  MemberID: ${member[0].user_id} , SocketId: ${member[0].socketId}`);
+        this.debug(`MONGO Delete Member  MemberID: ${member[0].user_id} , SocketId: ${member[0].socketId}`);
 
         this.deleteOne(channel, {user_id: member[0].user_id});
     }
@@ -105,13 +115,13 @@ export class MongoDatabase implements DatabaseDriver {
      * @param member
      */
     isMember(channel: string, member: any): Promise<any> {
-        Log.success(`MONGO IS_Member on Channel: ${channel}, Member: ${JSON.stringify(member)}`);
+        this.debug(`MONGO IS_Member on Channel: ${channel}, Member: ${JSON.stringify(member)}`);
         return new Promise<any>((resolve, reject) => {
             this.db.collection(channel).find({user_id: member.user_id}).toArray((err, res) =>{
                 if(err) {
                     const msg = `Mongo: isMember Error:${err.message}`;
                     this.log.error(msg);
-                    Log.error(msg);
+                    this.debug(msg);
                     return reject(err)
                 }
                 return resolve(res[0])
@@ -123,12 +133,12 @@ export class MongoDatabase implements DatabaseDriver {
      * Retrieve data from redis.
      */
     getMember(channel: string, member: any): Promise<any> {
-        Log.success(`MONGO GETMember on Channel: ${channel}, Member: ${JSON.stringify(member)}`);
+        this.debug(`MONGO GETMember on Channel: ${channel}, Member: ${JSON.stringify(member)}`);
         return new Promise<any>((resolve, reject) => {
             this.db.collection(channel).find({user_id: member.user_id}).toArray((err, res) =>{
                 if(err) {
                     const msg = `Mongo: getMember Error:${err.message}`;
-                    Log.error(msg);
+                    this.debug(msg);
                     this.log.error(msg);
                     return reject(err)
                 }
@@ -141,12 +151,12 @@ export class MongoDatabase implements DatabaseDriver {
      * Retrieve data from redis.
      */
     getMemberBySocketId(channel: string, socketId: string): Promise<any> {
-        Log.success(`MONGO GETMember By Socket ID on Channel: ${channel}, soketId: ${JSON.stringify(socketId)}`)
+        this.debug(`MONGO GETMember By Socket ID on Channel: ${channel}, soketId: ${JSON.stringify(socketId)}`)
         return new Promise<any>((resolve, reject) => {
             this.db.collection(channel).find({socketId: socketId}).toArray((err, res) =>{
                 if(err) {
                     const msg = `Mongo: getMemberBySocketId Error:${err.message}`;
-                    Log.error(msg);
+                    this.debug(msg);
                     this.log.error(msg);
                     return reject(err)
                 }
@@ -159,16 +169,16 @@ export class MongoDatabase implements DatabaseDriver {
      * Retrieve data from redis.
      */
     getMembers(channel: string): Promise<any> {
-        Log.success(`MONGO GETMemberS on Channel: ${channel}`);
+        this.debug(`MONGO GETMemberS on Channel: ${channel}`);
         return new Promise<any>((resolve, reject) => {
             this.db.collection(channel).find({}).toArray((err, res) =>{
                 if(err) {
                     const msg = `Mongo: getMembers Error:${err.message}`;
-                    Log.error(msg);
+                    this.debug(msg);
                     this.log.error(msg);
                     return reject(err)
                 }
-                Log.success(`MONGO GET MEMBERS on Channel: ${channel}, Members: ${JSON.stringify(res)}`);
+                this.debug(`MONGO GET MEMBERS on Channel: ${channel}, Members: ${JSON.stringify(res)}`);
                 return resolve(res)
             });
         });
@@ -185,7 +195,7 @@ export class MongoDatabase implements DatabaseDriver {
             this.db.collection(channel).deleteMany({socketId: { $nin: sockets }}, (err, res) => {
                 if(err) {
                     const msg = `Mongo: removeInactive Error:${err.message}`;
-                    Log.error(msg);
+                    this.debug(msg);
                     this.log.error(msg);
                     return reject(err);
                 }
@@ -205,7 +215,7 @@ export class MongoDatabase implements DatabaseDriver {
             this.db.collection(collection).deleteMany({socket_id: { $nin: sockets }}, (err, res) => {
                 if(err) {
                     const msg = `Mongo: removeInactiveSocketsInThisServer Error:${err.message}`;
-                    Log.error(msg);
+                    this.debug(msg);
                     this.log.error(msg);
                     return reject(err);
                 }
@@ -244,7 +254,7 @@ export class MongoDatabase implements DatabaseDriver {
         this.db.collection(collection).insertOne(data, (err, res) =>{
             if(err) {
                 const msg = `Mongo: insertOne Error:${err.message}`;
-                Log.error(msg);
+                this.debug(msg);
                 this.log.error(msg);
                 throw new Error(msg);
             }
@@ -261,7 +271,7 @@ export class MongoDatabase implements DatabaseDriver {
         this.db.collection(collection).deleteOne(data, (err, res) =>{
             if(err) {
                 const msg = `Mongo: deleteOne Error:${err.message}`;
-                Log.error(msg);
+                this.debug(msg);
                 this.log.error(msg);
                 throw new Error(msg);
             }
